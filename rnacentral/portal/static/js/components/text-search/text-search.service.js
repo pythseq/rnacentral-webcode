@@ -2,7 +2,7 @@
  * Service for launching a text search.
  */
 
-var search = function (_, $http, $interpolate, $location, $window, $q, routes) {
+var search = function (_, $http, $interpolate, $location, $window, $q, routes, luceneParser) {
     var self = this; // in case some event handler or constructor overrides "this"
 
     this.config = {
@@ -159,6 +159,8 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes) {
 
         // change page title, which is also used in browser tabs
         $window.document.title = 'Search: ' + query;
+
+        console.log(luceneParser.parse(query));
 
         query = self.preprocessQuery(query);
 
@@ -405,4 +407,4 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes) {
 };
 
 angular.module('rnacentralApp')
-    .service('search', ['_', '$http', '$interpolate', '$location', '$window', '$q', 'routes', search]);
+    .service('search', ['_', '$http', '$interpolate', '$location', '$window', '$q', 'routes', 'luceneParser', search]);
