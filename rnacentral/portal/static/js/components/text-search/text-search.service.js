@@ -162,7 +162,9 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
 
         console.log(luceneParser.parse(query));
 
-        query = self.preprocessQuery(query);
+        query = luceneParser.preprocessQuery(query);
+
+        self.result._query = query;
 
         // get queryUrl ready
         var ebeyeUrl = routes.ebiSearch({
@@ -203,82 +205,6 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
                 self.status = 'error';
             }
         );
-    };
-
-    /**
-     * Split query into words and then:
-     *  - append wildcards to all terms without double quotes and not ending with wildcards
-     *  - escape special symbols
-     *  - capitalize logical operators
-     *
-     *  Splitting into words is based on this SO question:
-     *  http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
-     * Each "word" is a sequence of characters that aren't spaces or quotes,
-     * or a sequence of characters that begin and end with a quote, with no quotes in between.
-     */
-    this.preprocessQuery = function (query) {
-
-        // replace URS/taxid with URS_taxid - replace slashes with underscore
-        query = query.replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');
-
-        // replace length query with a placeholder, example: length:[100 TO 200]
-        var lengthClause = query.match(/length\:\[\d+\s+to\s+\d+\]/i);
-        var placeholder = 'length_clause';
-        if (lengthClause) {
-          query = query.replace(lengthClause[0], placeholder);
-          lengthClause[0] = lengthClause[0].replace(/to/i, 'TO');
-        }
-
-        var words = query.match(/[^\s"]+|"[^"]*"/g);
-        var arrayLength = words.length;
-        for (var i = 0; i < arrayLength; i++) {
-            if ( words[i].match(/^(and|or|not)$/gi) ) {
-                // capitalize logical operators
-                words[i] = words[i].toUpperCase();
-            } else if ( words[i].match(/\:$/gi) ) {
-                // faceted search term + a colon, e.g. expert_db:
-                var term = words[i].replace(':','');
-                var xrefs = ['pubmed', 'doi', 'taxonomy'];
-                if ( term.match(new RegExp('^(' + xrefs.join('|') + ')$', 'i') ) ) {
-                    // xref fields must be capitalized
-                    term = term.toUpperCase();
-                }
-                words[i] = term + ':';
-            } else if ( words[i].match(/\//)) {
-                // do not add wildcards to DOIs
-                words[i] = escapeSearchTerm(words[i]);
-            } else if ( words[i].match(/^".+?"$/) ) {
-                // double quotes, do nothing
-            } else if ( words[i].match(/\*$/) ) {
-                // wildcard, escape term
-                words[i] = escapeSearchTerm(words[i]);
-            } else if ( words[i].match(/\)$/) ) {
-                // right closing grouping parenthesis, don't add a wildcard
-            } else if ( words[i].length < 3 ) {
-                // the word is too short for wildcards, do nothing
-            } else {
-                // all other words
-                // escape term, add wildcard
-                words[i] = escapeSearchTerm(words[i]) + '*';
-            }
-        }
-        query = words.join(' ');
-        query = query.replace(/\: /g, ':'); // to avoid spaces after faceted search terms
-        // replace placeholder with the original search term
-        if (lengthClause) {
-          query = query.replace(placeholder + '*', lengthClause[0]);
-        }
-        self.result._query = query;
-        return query;
-
-        /**
-         * Escape special symbols used by Lucene
-         * Escaped: + - && || ! { } [ ] ^ ~ ? : \ /
-         * Not escaped: * " ( ) because they may be used deliberately by the user
-         */
-        function escapeSearchTerm (searchTerm) {
-            return searchTerm.replace(/[\+\-&|!\{\}\[\]\^~\?\:\\\/]/g, "\\$&");
-        }
     };
 
     // /**
