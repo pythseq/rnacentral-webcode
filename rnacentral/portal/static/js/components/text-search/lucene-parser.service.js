@@ -62,7 +62,27 @@ var luceneParser = function() {
      * @param {Object} AST
      * @returns {string} - Lucene query string
      */
-    this.ASTtoString = function(AST) {
+    this.unparse = function(AST) {
+        var unparseExpression = function(expression) {
+            if (this._type(expression) == 'node') {
+                return unparseExpression(expression.left) + expression.operator + unparseExpression(expression.right);
+            } else if (this._type(expression) == 'field') {
+                var prefix = expression.prefix ? expression.prefix : '';
+                if (expression.field !== '<implicit>') return prefix + expression.term;
+                else return expression.field + ':' + prefix + expression.term
+            } else if (this._type(expression) == 'range') { // range expression
+                var inclusive_min = expression.inclusive_min ? expression.inclusive_min : expression.inclusive;
+                var inclusive_max = expression.inclusive_max ? expression.inclusive_max : expression.inclusive;
+                var delimiter_min = inclusive_min ? '[' : '{';
+                var delimiter_max = inclusive_max ? ']' : '}';
+
+                // expression.field has to be defined - we don't accept ranges without field name
+                return expression.field + ":" + delimiter_min + expression.term_min + " TO " + expression.term_max + delimiter_max;
+            } else {
+                throw "AST expression of unknown type: " + expression;
+            }
+        };
+
         var expression, stack = [AST], result = "";
         while (stack.length > 0) {
             expression = stack.pop();
@@ -77,6 +97,18 @@ var luceneParser = function() {
         }
 
         return result
+    };
+
+    /**
+     * Helper that determines, if given expression is a node, field or range expression.
+     * @param expression - a single expression from AST
+     * @returns {string} - one of 'node', 'field' or 'range'
+     * @private
+     */
+    this._type = function(expression) {
+        if (expression.left) return 'node';
+        else if (expression.term) return 'field';
+        else return 'range';
     };
 
     /**
@@ -143,7 +175,7 @@ var luceneParser = function() {
 
         }
 
-        return this.ASTtoString(AST);
+        return this.unparse(AST);
     };
 };
 
