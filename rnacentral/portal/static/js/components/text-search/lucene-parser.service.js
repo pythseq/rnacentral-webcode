@@ -65,35 +65,31 @@ var luceneParser = function() {
      * @returns {string} - Lucene query string
      */
     this.unparse = function(AST) {
-        var unparseExpression = function(expression) {
-            if (this._type(expression) === this.TYPES.NODE) {
-                return unparseExpression(expression.left) + expression.operator + unparseExpression(expression.right);
+        var result = "";
+        var stack = [AST]; // this is stack maintained for DFS
+
+        var expression; // expression is the currently evaluated
+        while (stack.length > 0) {
+            expression = stack.pop();
+
+            if (typeof expression == 'string') {
+                result = result + expression;
+            } else if (this._type(expression) === this.TYPES.NODE) {
+                stack.push('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
             } else if (this._type(expression) === this.TYPES.FIELD) {
                 var prefix = expression.prefix ? expression.prefix : '';
-                if (expression.field !== '<implicit>') return prefix + expression.term;
-                else return expression.field + ':' + prefix + expression.term
-            } else if (this._type(expression) === this.TYPES.RANGE) { // range expression
+                if (expression.field !== '<implicit>') substring += prefix + expression.term;
+                else substring += expression.field + ':' + prefix + expression.term
+            } else if (this._type(expression) === this.TYPES.RANGE) {
                 var inclusive_min = expression.inclusive_min ? expression.inclusive_min : expression.inclusive;
                 var inclusive_max = expression.inclusive_max ? expression.inclusive_max : expression.inclusive;
                 var delimiter_min = inclusive_min ? '[' : '{';
                 var delimiter_max = inclusive_max ? ']' : '}';
 
                 // expression.field has to be defined - we don't accept ranges without field name
-                return expression.field + ":" + delimiter_min + expression.term_min + " TO " + expression.term_max + delimiter_max;
+                substring += expression.field + ":" + delimiter_min + expression.term_min + " TO " + expression.term_max + delimiter_max;
             } else {
                 throw "AST expression of unknown type: " + expression;
-            }
-        };
-
-        var expression, stack = [AST], result = "";
-        while (stack.length > 0) {
-            expression = stack.pop();
-            if (this._type(expression) === this.TYPES.NODE) {
-
-            } else if (this._type(expression) === this.TYPES.FIELD) {
-
-            } else if (this._type(expression) === this.TYPES.RANGE) {
-
             }
 
         }
