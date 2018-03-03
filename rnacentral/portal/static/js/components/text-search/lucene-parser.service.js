@@ -13,20 +13,22 @@ limitations under the License.
 
 
 var luceneParser = function() {
+    this.TYPES = {'NODE': 'NODE', 'FIELD': 'FIELD', 'RANGE': 'RANGE'};
+
     /**
      * Parses Lucene queries into an Abstract Syntax Tree (AST) that consists of
      * 3 types of expressions:
      *
-     * Node expressions:
+     * NODE expressions:
      *
      * {
-     *     'left' : dictionary,     // field expression or node
+     *     'left' : dictionary,     // field OR node expression
      *     'operator': string,      // operator value
-     *     'right': dictionary,     // field expression OR node
+     *     'right': dictionary,     // field OR node expression
      *     'field': string          // field name (for field group syntax) [OPTIONAL]
      * }
      *
-     * Field expressions:
+     * FIELD expressions:
      *
      * {
      *     'field': string,         // field name
@@ -37,7 +39,7 @@ var luceneParser = function() {
      *     'proximity': integer     // proximity value [OPTIONAL]
      * }
      *
-     * Range expressions:
+     * RANGE expressions:
      *
      * {
      *     'field': string,         // field name
@@ -64,13 +66,13 @@ var luceneParser = function() {
      */
     this.unparse = function(AST) {
         var unparseExpression = function(expression) {
-            if (this._type(expression) == 'node') {
+            if (this._type(expression) === this.TYPES.NODE) {
                 return unparseExpression(expression.left) + expression.operator + unparseExpression(expression.right);
-            } else if (this._type(expression) == 'field') {
+            } else if (this._type(expression) === this.TYPES.FIELD) {
                 var prefix = expression.prefix ? expression.prefix : '';
                 if (expression.field !== '<implicit>') return prefix + expression.term;
                 else return expression.field + ':' + prefix + expression.term
-            } else if (this._type(expression) == 'range') { // range expression
+            } else if (this._type(expression) === this.TYPES.RANGE) { // range expression
                 var inclusive_min = expression.inclusive_min ? expression.inclusive_min : expression.inclusive;
                 var inclusive_max = expression.inclusive_max ? expression.inclusive_max : expression.inclusive;
                 var delimiter_min = inclusive_min ? '[' : '{';
@@ -86,11 +88,11 @@ var luceneParser = function() {
         var expression, stack = [AST], result = "";
         while (stack.length > 0) {
             expression = stack.pop();
-            if (expression.left) { // node expression
+            if (this._type(expression) === this.TYPES.NODE) {
 
-            } else if (expression.term) { // field expression
+            } else if (this._type(expression) === this.TYPES.FIELD) {
 
-            } else { // range expression
+            } else if (this._type(expression) === this.TYPES.RANGE) {
 
             }
 
@@ -106,8 +108,8 @@ var luceneParser = function() {
      * @private
      */
     this._type = function(expression) {
-        if (expression.left) return 'node';
-        else if (expression.term) return 'field';
+        if (expression.hasOwnProperty('left')) return 'node';
+        else if (expression.hasOwnProperty('term')) return 'field';
         else return 'range';
     };
 
@@ -142,11 +144,11 @@ var luceneParser = function() {
         var expression, stack = [AST];
         while (stack.length > 0) {
             expression = stack.pop();
-            if (expression.hasOwnProperty('left')) { // Node expressions:
+            if (this._type(expression) === this.TYPES.NODE) {
 
                 stack.push(right);
                 stack.push(left);
-            } else if (expression.hasOwnProperty('term')) {  // Field expressions:
+            } else if (this._type(expression) === this.TYPES.FIELD) {
 
                 if (field == '<implicit>') { // no colon in this term
 
@@ -167,7 +169,7 @@ var luceneParser = function() {
                         expression.term = this.escapeSearchTerm(expression.term) + '*';
 
                 }
-            } else { // Range Expressions:
+            } else if (this._type(expression) === this.TYPES.RANGE) {
             }
 
             // words[i].match(/\)$/)
