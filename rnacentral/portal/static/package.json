@@ -4,7 +4,7 @@
   "description": "",
   "main": "rnacentral.js",
   "scripts": {
-    "test": "karma start --browsers Chrome --single-run"
+    "test": "node_modules/karma/bin/karma start --browsers Chrome --single-run false --debug --auto-watch"
   },
   "repository": {
     "type": "git",
