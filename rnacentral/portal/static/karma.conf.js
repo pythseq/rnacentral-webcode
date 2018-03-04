@@ -27,6 +27,7 @@ module.exports = function(config) {
       'node_modules/angular-mocks/angular-mocks.js',
 
       'js/components/text-search/text-search.module.js',
+      'node_modules/lucene-query-parser/lib/lucene-query-parser.js',
       'js/components/text-search/lucene-parser.service.js',
       'js/components/text-search/lucene-parser.service.spec.js'
     ],

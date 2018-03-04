@@ -3,7 +3,7 @@ describe("Lucene query parser spec", function() {
     beforeEach(module('textSearch'));
     it("Should correctly parse and unparse", inject(function(luceneParser) {
         var query = 'foo AND bar:baz';
-        var AST = luceneParser.parse();
+        var AST = luceneParser.parse(query);
         var normalizedQuery = luceneParser.unparse(AST);
 
         expect(normalizedQuery).toEqual(query);
