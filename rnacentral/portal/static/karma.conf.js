@@ -17,11 +17,15 @@ module.exports = function(config) {
     files: [
       'node_modules/angular/angular.js',
       'node_modules/angular-animate/angular-animate.js',
-      'node_modules/angular-filter/angular-loading-bar/build/loading-bar.js',
-      'node_modules/angular-mocks/angular-mocks.js',
-      'node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js',
       'node_modules/angular-sanitize/angular-sanitize.js',
-      'js/**/*.js',
+      'node_modules/angular-filter/dist/angular-filter.js',
+      'node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js',
+      'node_modules/angular-filter/angular-loading-bar/build/loading-bar.js',
+      'node_modules/angularjs-slider/dist/rzslider.js',
+      'js/components/underscore.module.js',
+
+      'node_modules/angular-mocks/angular-mocks.js',
+      'js/components/text-search/**/*.js',
     ],
 
 
