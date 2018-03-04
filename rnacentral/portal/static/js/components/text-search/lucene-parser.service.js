@@ -149,7 +149,7 @@ var luceneParser = function() {
                 if (field == '<implicit>') { // no colon in this term
 
                 } else {
-                    if (['pubmed', 'doi', 'taxonomy'].indexOf(field) !=== -1 ) { // pubmed: something etc.
+                    if (['pubmed', 'doi', 'taxonomy'].indexOf(field) !== -1 ) { // pubmed: something etc.
                         // for these fields, values should be upper-case
                         expression.term = expression.term.toUpperCase();
                     }
@@ -177,5 +177,5 @@ var luceneParser = function() {
     };
 };
 
-angular.module('rnacentralApp')
+angular.module('textSearch')
     .service('luceneParser', [luceneParser]);

@@ -332,5 +332,5 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
     }
 };
 
-angular.module('rnacentralApp')
+angular.module('textSearch')
     .service('search', ['_', '$http', '$interpolate', '$location', '$window', '$q', 'routes', 'luceneParser', search]);
