@@ -20,12 +20,15 @@ module.exports = function(config) {
       'node_modules/angular-sanitize/angular-sanitize.js',
       'node_modules/angular-filter/dist/angular-filter.js',
       'node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js',
-      'node_modules/angular-filter/angular-loading-bar/build/loading-bar.js',
+      'node_modules/angular-loading-bar/build/loading-bar.js',
       'node_modules/angularjs-slider/dist/rzslider.js',
       'js/components/underscore.module.js',
 
       'node_modules/angular-mocks/angular-mocks.js',
-      'js/components/text-search/**/*.js',
+
+      'js/components/text-search/text-search.module.js',
+      'js/components/text-search/lucene-parser.service.js',
+      'js/components/text-search/lucene-parser.service.spec.js'
     ],
 
 
