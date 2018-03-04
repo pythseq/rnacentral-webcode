@@ -76,7 +76,8 @@ var luceneParser = function() {
             if (typeof expression == 'string') {
                 result = result + expression;
             } else if (this._type(expression) === this.TYPES.NODE) {
-                stack.unshift('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
+                if (expression === AST) stack.unshift(expression.left, ' ', expression.operator, ' ', expression.right);
+                else stack.unshift('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
             } else if (this._type(expression) === this.TYPES.FIELD) {
                 var prefix = expression.prefix ? expression.prefix : '';
                 if (expression.field === '<implicit>') result += prefix + expression.term;
