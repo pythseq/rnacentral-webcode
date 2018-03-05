@@ -1,8 +1,8 @@
 var textSearchResults = {
     bindings: {},
     templateUrl: '/static/js/components/text-search/text-search-results/text-search-results.html',
-    controller: ['$interpolate', '$location', '$http', '$timeout', '$scope', '$filter', '$q', 'search', 'routes',
-    function($interpolate, $location, $http, $timeout, $scope, $filter, $q, search, routes) {
+    controller: ['$interpolate', '$location', '$http', '$timeout', '$scope', '$filter', '$q', 'search', 'luceneParser', 'routes',
+    function($interpolate, $location, $http, $timeout, $scope, $filter, $q, search, luceneParser, routes) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
@@ -107,7 +107,7 @@ var textSearchResults = {
 
                 return routes.ebiSearch({
                     ebiBaseUrl: global_settings.EBI_SEARCH_ENDPOINT,
-                    query: query ? search.preprocessQuery(query): query,
+                    query: query ? luceneParser.preprocessQuery(query): query,
                     hlfields: "length",
                     facetcount: "",
                     facetfields: "length",
