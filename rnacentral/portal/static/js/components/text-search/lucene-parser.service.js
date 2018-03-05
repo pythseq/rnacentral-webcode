@@ -85,7 +85,13 @@ var luceneParser = function() {
             } else if (this._type(expression) === this.TYPES.FIELD) {
                 var prefix = expression.prefix ? expression.prefix : '';
                 if (expression.field === '<implicit>') result += prefix + expression.term;
-                else result += expression.field + ':' + prefix + '"' + expression.term + '"';
+                else {
+                    if (['pubmed', 'doi', 'taxonomy'].indexOf(expression.field) !== -1 ) {
+                        expression.term = expression.term.toUpperCase();
+                    }
+
+                    result += expression.field + ':' + prefix + '"' + expression.term + '"';
+                }
             } else if (this._type(expression) === this.TYPES.RANGE) {
                 var inclusive_min = expression.inclusive_min ? expression.inclusive_min : expression.inclusive;
                 var inclusive_max = expression.inclusive_max ? expression.inclusive_max : expression.inclusive;
@@ -104,6 +110,15 @@ var luceneParser = function() {
     };
 
     /**
+     * Escape special symbols used by Lucene
+     * Escaped: + - && || ! { } [ ] ^ ~ ? : \ /
+     * Not escaped: * " ( ) because they may be used deliberately by the user
+     */
+    this._escape = function (searchTerm) {
+        return searchTerm.replace(/[\+\-&|!\{\}\[\]\^~\?\:\\\/]/g, "\\$&");
+    };
+
+    /**
      * Helper that determines, if given expression is a node, field or range expression.
      * @param expression - a single expression from AST
      * @returns {string} - one of 'node', 'field' or 'range'
@@ -117,15 +132,6 @@ var luceneParser = function() {
     };
 
     /**
-     * Escape special symbols used by Lucene
-     * Escaped: + - && || ! { } [ ] ^ ~ ? : \ /
-     * Not escaped: * " ( ) because they may be used deliberately by the user
-     */
-    this.escapeSearchTerm = function (searchTerm) {
-        return searchTerm.replace(/[\+\-&|!\{\}\[\]\^~\?\:\\\/]/g, "\\$&");
-    };
-
-    /**
      *  - append wildcards to all terms without double quotes and not ending with wildcards
      *  - escape special symbols
      *  - capitalize logical operators
@@ -135,50 +141,8 @@ var luceneParser = function() {
         query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');;
 
         // parse the query, of die, if lucene parser fails to do so
-        try {
-            var AST = this.parse(query);
-        }
-        catch (e) {
-            console.log(e);
-            return "rna";
-        }
-
-        // Perform depth-first search (DFS) on our AST
-        var expression, stack = [AST];
-        while (stack.length > 0) {
-            expression = stack.pop();
-            if (this._type(expression) === this.TYPES.NODE) {
-
-                stack.push(right);
-                stack.push(left);
-            } else if (this._type(expression) === this.TYPES.FIELD) {
-
-                if (field == '<implicit>') { // no colon in this term
-
-                } else {
-                    if (['pubmed', 'doi', 'taxonomy'].indexOf(field) !== -1 ) { // pubmed: something etc.
-                        // for these fields, values should be upper-case
-                        expression.term = expression.term.toUpperCase();
-                    }
-
-                    // double quotes => do nothing
-                    if (expression.term.match(/^".+?"$/)) continue;
-
-                    // wildcard => escape term
-                    if (expression.term.match(/\*$/)) expression.term = this.escapeSearchTerm(expression.term);
-
-                    // world not too short and not doi => escape, add wildcard
-                    if ( !(expression.term.length < 3 || expression.field === 'doi' ) )
-                        expression.term = this.escapeSearchTerm(expression.term) + '*';
-
-                }
-            } else if (this._type(expression) === this.TYPES.RANGE) {
-            }
-
-            // words[i].match(/\)$/)
-            // right closing grouping parenthesis, don't add a wildcard
-
-        }
+        try { var AST = this.parse(query); }
+        catch (e) { console.log(e); return "rna"; }
 
         return this.unparse(AST);
     };
