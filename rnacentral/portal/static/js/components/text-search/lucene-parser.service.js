@@ -148,6 +148,32 @@ var luceneParser = function() {
     };
 
     /**
+     * Adds parent property to each AST element.
+     * @param {object} AST
+     * @returns {object} copy of AST with denoted
+     */
+    this.ASTWithParents = function(AST) {
+        var clone = JSON.parse(JSON.stringify(AST)); // clone the AST, ineffective though
+        clone.parent = null; // root of the tree has null parent
+
+        var top, stack = [clone];
+        while (stack.length > 0) {
+            top = stack.shift();
+            if (this._type(top) === this.TYPES.NODE) {
+                stack.unshift(top.left);
+                top.left.parent = top;
+
+                if (top.hasOwnProperty('right')) {
+                    stack.unshift(top.right);
+                    top.right.parent = top;
+                }
+            }
+        }
+
+        return clone;
+    };
+
+    /**
      * Returns a list of all occurrences of named field (e.g. 'length: 130' or
      * 'length: [100 TO 200]') in field and range expressions of AST.
      * @param {string} field - name of the field, we're looking for
