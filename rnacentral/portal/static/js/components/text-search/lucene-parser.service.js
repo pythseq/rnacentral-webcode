@@ -138,7 +138,7 @@ var luceneParser = function() {
      */
     this.preprocessQuery = function (query) {
         // capitalize everything, replace URS/taxid with URS_taxid - replace slashes with underscore
-        query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');;
+        query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');
 
         // parse the query, of die, if lucene parser fails to do so
         try { var AST = this.parse(query); }
