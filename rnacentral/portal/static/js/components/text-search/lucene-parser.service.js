@@ -76,12 +76,16 @@ var luceneParser = function() {
             if (typeof expression == 'string') {
                 result = result + expression;
             } else if (this._type(expression) === this.TYPES.NODE) {
-                if (expression === AST) stack.unshift(expression.left, ' ', expression.operator, ' ', expression.right);
-                else stack.unshift('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
+                if (expression.hasOwnProperty('right')) {
+                    if (expression === AST) stack.unshift(expression.left, ' ', expression.operator, ' ', expression.right);
+                    else stack.unshift('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
+                } else {
+                    stack.unshift(expression.left);
+                }
             } else if (this._type(expression) === this.TYPES.FIELD) {
                 var prefix = expression.prefix ? expression.prefix : '';
                 if (expression.field === '<implicit>') result += prefix + expression.term;
-                else result += expression.field + ':' + prefix + expression.term
+                else result += expression.field + ':' + prefix + '"' + expression.term + '"';
             } else if (this._type(expression) === this.TYPES.RANGE) {
                 var inclusive_min = expression.inclusive_min ? expression.inclusive_min : expression.inclusive;
                 var inclusive_max = expression.inclusive_max ? expression.inclusive_max : expression.inclusive;
