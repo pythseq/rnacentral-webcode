@@ -146,6 +146,50 @@ var luceneParser = function() {
 
         return this.unparse(AST);
     };
+
+    /**
+     * Returns a list of all occurrences of named field (e.g. 'length: 130' or
+     * 'length: [100 TO 200]') in field and range expressions of AST.
+     * @param {string} field - name of the field, we're looking for
+     * @param {object} AST
+     * @param {boolean} [withParent=false]
+     * @returns {Array} - Array of expressions (left-to-right) OR
+     *  array of pairs {expression: <expression>, parent: <parent>}, where
+     *  expression.field === field.
+     */
+    this.findField = function(field, AST, withParent) {
+        var top; // top of the stack
+        var stack = [{ expression:AST, parent: null, grandparent: null}]; // dicts {expression: <expression>, parent: <parent>}
+        var result = [];
+        while (stack.length > 0) {
+            top = stack.shift();
+            if (this._type(top.expression) !== this.TYPES.NODE) {
+                if (withParent) results.push(top);
+                else results.push(top.expression);
+            } else {
+                stack.unshift({expression: top.expression.left, parent: top.expression});
+                if (top.expression.hasOwnProperty('right')) {
+                    stack.unshift({expression: top.expression.right, parent: top.expression});
+                }
+            }
+        }
+
+        return result;
+    };
+
+    /**
+     * Removes all the occurrences of named field from AST.
+     * @param {string} field
+     * @param {object} AST
+     * @returns {object} AST without the specified fields
+     */
+    this.removeField = function(field, AST) {
+        var hits = this.findField(field, AST, true); // we need to get rid of these expressions
+        hits.forEach(function(hit) {
+            hit.parent
+        });
+    };
+
 };
 
 angular.module('textSearch')
