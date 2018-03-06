@@ -154,15 +154,9 @@ var textSearchResults = {
          * Resets slider to default value
          */
         ctrl.resetSlider = function() {
-            var lengthClause = 'length\\:\\[(\\d+) to (\\d+)\\]';
-            var lengthRegexp = new RegExp('length\\:\\[(\\d+) to (\\d+)\\]', 'i');
-
-            // remove length clause in different contexts
-            var filteredQuery = search.query;
-            filteredQuery = filteredQuery.replace(new RegExp(' AND ' + lengthClause + ' AND '), ' AND ', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(lengthClause + ' AND '), '', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(' AND ' + lengthClause), '', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(lengthClause), '', 'i') || 'RNA';
+            var AST = luceneParser.parse(search.query);
+            luceneParser.removeField('length', AST);
+            var filteredQuery = luceneParser.unparse(AST);
 
             search.search(filteredQuery);
         };
