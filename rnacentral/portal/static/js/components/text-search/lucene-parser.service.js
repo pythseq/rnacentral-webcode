@@ -188,7 +188,7 @@ var luceneParser = function() {
         while (stack.length > 0) {
             top = stack.shift();
             if (this._type(top) !== this.TYPES.NODE) {
-                if (top.field === field) results.push(top);
+                if (top.field === field) result.push(top);
             }
             else {
                 stack.unshift(top.left);
@@ -207,7 +207,7 @@ var luceneParser = function() {
      */
     this.removeField = function(field, AST) {
         var otherChild, parentToGrandparent;
-        var hits = this.findField(field, AST, true); // we need to get rid of these expressions
+        var hits = this.findField(field, AST); // we need to get rid of these expressions
         hits.forEach(function(hit) {
             // if parent has both left and right children, get rid of hit.parent and replace it with parent's otherChild
             if (hit.parent.hasOwnProperty('right')) {
