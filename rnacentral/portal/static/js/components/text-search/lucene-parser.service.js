@@ -56,7 +56,9 @@ var luceneParser = function() {
      * @returns {Object} - AST
      */
     this.parse = function(query) {
-        return lucenequeryparser.parse(this._preprocess(query));
+        query = this._preprocess(query);
+        var AST = lucenequeryparser.parse(query);
+        return this.ASTWithParents(AST);
     };
 
     /**
@@ -110,7 +112,7 @@ var luceneParser = function() {
     };
 
     /**
-     * Capitalize lucene AND/OR/NOT/TO words, replaces slashes with underscores
+     * Capitalize lucene AND/OR/NOT/TO words, replace slashes with underscores
      * @param query
      * @private
      */

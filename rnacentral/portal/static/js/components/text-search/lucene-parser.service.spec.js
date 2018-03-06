@@ -59,7 +59,6 @@ describe("Lucene parser:", function() {
        it("should remove length from: '4V4Q AND length:[120 TO 1065]'", inject(function (luceneParser) {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = luceneParser.parse(query);
-            AST = luceneParser.ASTWithParents(AST);
             luceneParser.removeField('length', AST);
 
             var normalizedQuery = luceneParser.unparse(AST);

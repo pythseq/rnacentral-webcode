@@ -48,48 +48,45 @@ var textSearchResults = {
          */
         ctrl.setLengthSlider = function(query) {
             var min, max, floor, ceil;
-            var lengthClause = 'length\\:\\[(\\d+) to (\\d+)\\]';
-            var lengthRegexp = new RegExp('length\\:\\[(\\d+) to (\\d+)\\]', 'i');
 
             // remove length clause in different contexts
-            var filteredQuery = query;
-            filteredQuery = filteredQuery.replace(new RegExp(' AND ' + lengthClause + ' AND '), ' AND ', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(lengthClause + ' AND '), '', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(' AND ' + lengthClause), '', 'i');
-            filteredQuery = filteredQuery.replace(new RegExp(lengthClause), '', 'i') || 'RNA';
+            var AST = luceneParser.parse(query);
+            var filteredQuery = luceneParser.unparse(luceneParser.removeField('length', AST));
 
-            // find min/max in query's lengthClause (if any), get floor/ceil by sending query without lengthClause
-            var groups = lengthRegexp.exec(query);
+            // find min/max length in query, get floor/ceil by sending query without lengthClause
+            var queryMin, queryMax;
+            var lengthField = luceneParser.findField('length', AST);
+
+            if (lengthField.length !== 0) {
+                queryMin = parseInt(luceneParser.findField('length')[0].term_min);
+                queryMax = parseInt(luceneParser.findField('length')[0].term_max);
+            }
+
+            function _setLengthSlider(floor, ceil, queryMin, queryMax) {
+                if (typeof(queryMin) !== 'undefined' && typeof(queryMax) !== 'undefined' ) {
+                    min = queryMin < floor ? floor : queryMin;
+                    max = queryMax > ceil ? ceil : queryMax;
+                } else {
+                    min = floor;
+                    max = ceil;
+                }
+
+                ctrl.lengthSlider = ctrl.LengthSlider(min, max, floor, ceil);
+                $timeout(function () { $scope.$broadcast('rzSliderForceRender'); }); // issue render just in case
+            }
+
             ctrl.getFloorCeil(filteredQuery).then(
                 function(floorceil) {
                     floor = parseInt(floorceil[0].data.entries[0].highlights.length);
                     ceil = parseInt(floorceil[1].data.entries[0].highlights.length);
 
-                    if (groups) {
-                        min = parseInt(groups[1]) < floor ? floor : parseInt(groups[1]);
-                        max = parseInt(groups[2]) > ceil ? ceil : parseInt(groups[2]);
-                    } else {
-                        min = floor;
-                        max = ceil;
-                    }
-
-                    ctrl.lengthSlider = ctrl.LengthSlider(min, max, floor, ceil);
-                    $timeout(function () { $scope.$broadcast('rzSliderForceRender'); }); // issue render just in case
+                    _setLengthSlider(floor, ceil, queryMin, queryMax);
                 },
                 function (failure) { // non-mission critical, let's fallback to sensible defaults
                     var floor = 10;
-                    var ceil = 2147483647; // macrocosm constant - if length exceeds it, EBI search fails
+                    var ceil = 2147483647; // macrocosm constant apparently - if length exceeds it, EBI search fails
 
-                    if (groups) {
-                        min = parseInt(groups[1]) < floor ? floor : parseInt(groups[1]);
-                        max = parseInt(groups[2]) > ceil ? ceil : parseInt(groups[2]);
-                    } else {
-                        min = floor;
-                        max = ceil;
-                    }
-
-                    ctrl.lengthSlider = ctrl.LengthSlider(min, max, floor, ceil);
-                    $timeout(function () { $scope.$broadcast('rzSliderForceRender'); }); // issue render just in case
+                    _setLengthSlider(floor, ceil, queryMin, queryMax);
                 }
             );
         };
