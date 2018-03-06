@@ -168,9 +168,10 @@ var textSearchResults = {
         /**
          * Determine if the facet has already been applied.
          */
-        ctrl.isFacetApplied = function(facetId, facetValue) {
-            var facetQuery = new RegExp(facetId + '\\:"' + facetValue + '"', 'i');
-            return !!search.query.match(facetQuery);
+        ctrl.isFacetApplied = function(facetId) {
+            var AST = luceneParser.parse(search.query);
+            var facets = luceneParser.findField(facetId, AST);
+            return facets.length > 0;
         };
 
         /**
