@@ -49,18 +49,18 @@ var textSearchResults = {
         ctrl.setLengthSlider = function(query) {
             var min, max, floor, ceil;
 
-            // remove length clause in different contexts
             var AST = luceneParser.parse(query);
-            var filteredQuery = luceneParser.unparse(luceneParser.removeField('length', AST));
 
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
             var lengthField = luceneParser.findField('length', AST);
-
             if (lengthField.length !== 0) {
-                queryMin = parseInt(luceneParser.findField('length')[0].term_min);
-                queryMax = parseInt(luceneParser.findField('length')[0].term_max);
+                queryMin = parseInt(lengthField[0].term_min);
+                queryMax = parseInt(lengthField[0].term_max);
             }
+
+            luceneParser.removeField('length', AST);
+            var filteredQuery = luceneParser.unparse(AST);
 
             function _setLengthSlider(floor, ceil, queryMin, queryMax) {
                 if (typeof(queryMin) !== 'undefined' && typeof(queryMax) !== 'undefined' ) {
