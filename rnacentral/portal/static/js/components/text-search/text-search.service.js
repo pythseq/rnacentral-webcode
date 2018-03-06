@@ -162,7 +162,8 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
 
         console.log(luceneParser.parse(query));
 
-        query = luceneParser.preprocessQuery(query);
+        var AST = luceneParser.parse(query);
+        query = luceneParser.unparse(AST);
 
         self.result._query = query;
 

@@ -107,7 +107,7 @@ var textSearchResults = {
 
                 return routes.ebiSearch({
                     ebiBaseUrl: global_settings.EBI_SEARCH_ENDPOINT,
-                    query: query ? luceneParser.preprocessQuery(query): query,
+                    query: query ? luceneParser._preprocess(query): query,
                     hlfields: "length",
                     facetcount: "",
                     facetfields: "length",

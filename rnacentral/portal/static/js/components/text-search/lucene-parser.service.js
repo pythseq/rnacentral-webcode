@@ -56,7 +56,7 @@ var luceneParser = function() {
      * @returns {Object} - AST
      */
     this.parse = function(query) {
-        return lucenequeryparser.parse(query);
+        return lucenequeryparser.parse(this._preprocess(query));
     };
 
     /**
@@ -110,9 +110,23 @@ var luceneParser = function() {
     };
 
     /**
+     * Capitalize lucene AND/OR/NOT/TO words, replaces slashes with underscores
+     * @param query
+     * @private
+     */
+    this._preprocess = function (query) {
+        return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
+                    .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
+                    .reduce(function(query, word) { return query + " " + word }) // join words
+                    .replace(/: /g, ':') // avoid spaces after faceted search terms
+                    .replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2'); // replace slashes with underscores
+    };
+
+    /**
      * Escape special symbols used by Lucene
      * Escaped: + - && || ! { } [ ] ^ ~ ? : \ /
      * Not escaped: * " ( ) because they may be used deliberately by the user
+     * @private
      */
     this._escape = function (searchTerm) {
         return searchTerm.replace(/[\+\-&|!\{\}\[\]\^~\?\:\\\/]/g, "\\$&");
@@ -129,22 +143,6 @@ var luceneParser = function() {
         else if (expression.hasOwnProperty('term')) return this.TYPES.FIELD;
         else if (expression.hasOwnProperty('term_min')) return this.TYPES.RANGE;
         else throw "AST expression of unknown type: " + JSON.stringify(expression);
-    };
-
-    /**
-     *  - append wildcards to all terms without double quotes and not ending with wildcards
-     *  - escape special symbols
-     *  - capitalize logical operators
-     */
-    this.preprocessQuery = function (query) {
-        // capitalize everything, replace URS/taxid with URS_taxid - replace slashes with underscore
-        query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');
-
-        // parse the query, of die, if lucene parser fails to do so
-        try { var AST = this.parse(query); }
-        catch (e) { console.log(e); return "rna"; }
-
-        return this.unparse(AST);
     };
 
     /**
