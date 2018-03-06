@@ -49,19 +49,20 @@ var textSearchResults = {
         ctrl.setLengthSlider = function(query) {
             var min, max, floor, ceil;
 
-            var AST = luceneParser.parse(query);
-
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
+            var AST = luceneParser.parse(query);
             var lengthField = luceneParser.findField('length', AST);
             if (lengthField.length !== 0) {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
             }
-
             luceneParser.removeField('length', AST);
             var filteredQuery = luceneParser.unparse(AST);
 
+            /**
+             * Small internal function that update slider with new floor/ceil (and min/max, if necessary).
+             */
             function _setLengthSlider(floor, ceil, queryMin, queryMax) {
                 if (typeof(queryMin) !== 'undefined' && typeof(queryMax) !== 'undefined' ) {
                     min = queryMin < floor ? floor : queryMin;
@@ -83,8 +84,8 @@ var textSearchResults = {
                     _setLengthSlider(floor, ceil, queryMin, queryMax);
                 },
                 function (failure) { // non-mission critical, let's fallback to sensible defaults
-                    var floor = 10;
-                    var ceil = 2147483647; // macrocosm constant apparently - if length exceeds it, EBI search fails
+                    floor = 10;
+                    ceil = 2147483647; // macrocosm constant apparently - if length exceeds it, EBI search fails
 
                     _setLengthSlider(floor, ceil, queryMin, queryMax);
                 }
