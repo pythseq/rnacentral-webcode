@@ -241,7 +241,7 @@ var luceneParser = function() {
      * @returns {object} newAST
      */
     this.addField = function(field, operator, AST) {
-        var newAST = { left: AST, operator: operator, right: newField};
+        var newAST = { left: AST, operator: operator, right: field};
         if (AST.hasOwnProperty('parent')) {
             AST.parent = newAST;
             newAST.parent = null;

@@ -56,13 +56,33 @@ describe("Lucene parser:", function() {
     });
 
     describe("removeField():", function() {
-       it("should remove length from: '4V4Q AND length:[120 TO 1065]'", inject(function (luceneParser) {
+       it("should remove length from: '4V4Q AND length:[120 TO 1029]'", inject(function (luceneParser) {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = luceneParser.parse(query);
             luceneParser.removeField('length', AST);
 
             var normalizedQuery = luceneParser.unparse(AST);
             expect(normalizedQuery).toEqual('4V4Q');
+       }));
+    });
+
+    describe("addField():", function() {
+       it("should add 'length:[120 TO 1029]' with 'AND' operator to '4V4Q'", inject(function (luceneParser) {
+           var query = '4V4Q';
+           var AST = luceneParser.parse(query);
+
+           var field = {
+               'field': 'length',
+               'term_min': '120',
+               'term_max': '1029',
+               'inclusive': true,
+               'inclusive_min': true,
+               'inclusive_max': true
+           };
+           var newAST = luceneParser.addField(field, 'AND', AST);
+
+           var normalizedQuery = luceneParser.unparse(newAST);
+           expect(normalizedQuery).toEqual('4V4Q AND length:[120 TO 1029]');
        }));
     });
 });
