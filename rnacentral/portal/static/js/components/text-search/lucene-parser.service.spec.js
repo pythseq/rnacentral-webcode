@@ -51,7 +51,7 @@ describe("Lucene parser:", function() {
         }));
     });
 
-    describe("findField():", function() {
+    describe("findFieldAll():", function() {
 
     });
 

@@ -52,7 +52,7 @@ var textSearchResults = {
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
             var AST = luceneParser.parse(query);
-            var lengthField = luceneParser.findField('length', AST);
+            var lengthField = luceneParser.findFieldAll('length', AST);
             if (lengthField.length !== 0) {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
@@ -168,9 +168,16 @@ var textSearchResults = {
         /**
          * Determine if the facet has already been applied.
          */
-        ctrl.isFacetApplied = function(facetId) {
+        ctrl.isFacetApplied = function(facetId, facetValue) {
             var AST = luceneParser.parse(search.query);
-            var facets = luceneParser.findField(facetId, AST);
+            var facets = luceneParser.findFieldAll(facetId, AST);
+            facets.some(function(facet) {
+                if (facet.hasOwnAttribute('term') ) {
+                    return facet.term === facetValue;
+                } else {
+                    return facet.term_min === facetValue[0] && facet.term_max === facetValue[1];
+                }
+            });
             return facets.length > 0;
         };
 
@@ -180,19 +187,24 @@ var textSearchResults = {
          * parameters.
          */
         ctrl.facetSearch = function(facetId, facetValue) {
-            var facet, newQuery = search.query;
+            var field, newQuery, newAST;
+
+            var AST = luceneParser(search.query);
 
             if (facetId !== 'length') {
-                facet = facetId + ':"' + facetValue + '"';
-
-                if (ctrl.isFacetApplied(facetId, facetValue)) {
-                    // remove facet in different contexts
-                    newQuery = newQuery.replace(' AND ' + facet + ' AND ', ' AND ', 'i');
-                    newQuery = newQuery.replace(facet + ' AND ', '', 'i');
-                    newQuery = newQuery.replace(' AND ' + facet, '', 'i');
-                    newQuery = newQuery.replace(facet, '', 'i') || 'RNA';
-                } else {
-                    newQuery = search.query + ' AND ' + facet; // add new facet
+                if (ctrl.isFacetApplied(facetId, facetValue)) { // remove facet
+                    AST.removeField(facetId, facetValue);
+                } else { // add new facet
+                    field = {
+                        field: facetId,
+                        term: facetValue,
+                        prefix: undefined,
+                        boost: undefined,
+                        similarity: undefined,
+                        proximity: undefined
+                    };
+                    newAST = luceneParser.addField(field, AST);
+                    newQuery = luceneParser.unparse(newAST);
                 }
             } else {
                 var lengthClause = 'length\\:\\[\\d+ to \\d+\\]';

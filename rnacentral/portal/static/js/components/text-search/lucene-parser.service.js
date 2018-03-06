@@ -175,13 +175,40 @@ var luceneParser = function() {
     };
 
     /**
+     * Returns first occurence of a named field with a certain term
+     * @param {string} field
+     * @param {string|object} term - string for FIELD expressions, object {} for RANGE expressions
+     * @param {object} AST
+     * @returns {object} - found expression object
+     */
+    this.findField = function(field, term, AST) {
+        var top; // top of the stack
+        var stack = [AST];
+        while (stack.length > 0) {
+            top = stack.shift();
+            if (this._type(top) === this.TYPES.FIELD) {
+                if (top.field === field && top.term === term) return top;
+            } else if (this._type(top) === this.TYPES.RANGE) {
+                if (top.field === field &&
+                    top.term_min === term.term_min &&
+                    top.term_max === term.term_max &&
+                    top.inclusive_min === term.inclusive_min &&
+                    top.inclusive_max === term.inclusive_max) return top;
+            } else if (this._type(top) === this.TYPES.NODE) {
+                stack.unshift(top.left);
+                if (top.hasOwnProperty('right')) stack.unshift(top.right);
+            }
+        }
+    };
+
+    /**
      * Returns a list of all occurrences of named field (e.g. 'length: 130' or
      * 'length: [100 TO 200]') in FIELD and RANGE expressions of AST.
      * @param {string} field - name of the field, we're looking for
      * @param {object} AST with parents
      * @returns {Array} - Array of expressions (left-to-right)
      */
-    this.findField = function(field, AST) {
+    this.findFieldAll = function(field, AST) {
         var top; // top of the stack
         var stack = [AST];
         var result = [];
@@ -207,7 +234,7 @@ var luceneParser = function() {
      */
     this.removeField = function(field, AST) {
         var otherChild, parentToGrandparent;
-        var hits = this.findField(field, AST); // we need to get rid of these expressions
+        var hits = this.findFieldAll(field, AST); // we need to get rid of these expressions
         hits.forEach(function(hit) {
             // if parent has both left and right children, get rid of hit.parent and replace it with parent's otherChild
             if (hit.parent.hasOwnProperty('right')) {
