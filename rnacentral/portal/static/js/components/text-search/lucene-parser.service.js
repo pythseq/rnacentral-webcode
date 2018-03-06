@@ -233,6 +233,23 @@ var luceneParser = function() {
     };
 
     /**
+     * Adds a field to the top of the AST (when stringified, it is going
+     * to be the last part of query string).
+     * @param {object} field - FIELD or RANGE expression
+     * @param {string} operator - e.g. 'AND', 'OR'
+     * @param {object} AST
+     * @returns {object} newAST
+     */
+    this.addField = function(field, operator, AST) {
+        var newAST = { left: AST, operator: operator, right: newField};
+        if (AST.hasOwnProperty('parent')) {
+            AST.parent = newAST;
+            newAST.parent = null;
+        }
+        return newAST;
+    };
+
+    /**
      * Checks, if search query contains any lucene-specific syntax, or if it's a plain text
      * @param {string} query
      * @returns {boolean} true, if it's a complex lucene expression, false - if it's just a plaintext search
