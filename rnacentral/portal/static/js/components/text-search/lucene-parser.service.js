@@ -148,7 +148,8 @@ var luceneParser = function() {
     };
 
     /**
-     * Adds parent property to each AST element.
+     * Adds parent property to each AST element that points to its parent
+     * node element.
      * @param {object} AST
      * @returns {object} copy of AST with denoted
      */
@@ -175,28 +176,23 @@ var luceneParser = function() {
 
     /**
      * Returns a list of all occurrences of named field (e.g. 'length: 130' or
-     * 'length: [100 TO 200]') in field and range expressions of AST.
+     * 'length: [100 TO 200]') in FIELD and RANGE expressions of AST.
      * @param {string} field - name of the field, we're looking for
-     * @param {object} AST
-     * @param {boolean} [withParent=false]
-     * @returns {Array} - Array of expressions (left-to-right) OR
-     *  array of pairs {expression: <expression>, parent: <parent>}, where
-     *  expression.field === field.
+     * @param {object} AST with parents
+     * @returns {Array} - Array of expressions (left-to-right)
      */
-    this.findField = function(field, AST, withParent) {
+    this.findField = function(field, AST) {
         var top; // top of the stack
-        var stack = [{ expression:AST, parent: null, grandparent: null}]; // dicts {expression: <expression>, parent: <parent>}
+        var stack = [AST];
         var result = [];
         while (stack.length > 0) {
             top = stack.shift();
-            if (this._type(top.expression) !== this.TYPES.NODE) {
-                if (withParent) results.push(top);
-                else results.push(top.expression);
-            } else {
-                stack.unshift({expression: top.expression.left, parent: top.expression});
-                if (top.expression.hasOwnProperty('right')) {
-                    stack.unshift({expression: top.expression.right, parent: top.expression});
-                }
+            if (this._type(top) !== this.TYPES.NODE) {
+                if (top.field === field) results.push(top);
+            }
+            else {
+                stack.unshift(top.left);
+                if (top.hasOwnProperty('right')) stack.unshift(top.right);
             }
         }
 
@@ -206,13 +202,33 @@ var luceneParser = function() {
     /**
      * Removes all the occurrences of named field from AST.
      * @param {string} field
-     * @param {object} AST
-     * @returns {object} AST without the specified fields
+     * @param {object} AST with parents
+     * @returns {object} AST with specified fields removed
      */
     this.removeField = function(field, AST) {
+        var otherChild, parentToGrandparent;
         var hits = this.findField(field, AST, true); // we need to get rid of these expressions
         hits.forEach(function(hit) {
-            hit.parent
+            // if parent has both left and right children, get rid of hit.parent and replace it with parent's otherChild
+            if (hit.parent.hasOwnProperty('right')) {
+                otherChild = hit.parent.left === hit ? hit.parent.right : hit.parent.left;
+
+                if (hit.parent.parent === null) { // special case: hit.parent is root
+                    hit.parent.left = otherChild;
+                    delete hit.parent.right;
+                } else {
+                    parentToGrandparent = hit.parent.parent.left === hit.parent ? 'left' : 'right';
+                    hit.parent.parent[parentToGrandparent] = otherChild;
+                }
+            } else { // parent has only one child and needs to go, too, unless it's root
+                if (hit.parent.parent === null) {
+                    delete hit.parent.left; // TODO: is this a meaningful empty tree?
+                } else {
+                    var uncle = hit.parent.parent.left == hit.parent ? hit.parent.parent.right : hit.parent.parent.left;
+                    hit.parent.parent.left = uncle;
+                    delete hit.parent.parent.right;
+                }
+            }
         });
     };
 
