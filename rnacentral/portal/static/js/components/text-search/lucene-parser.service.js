@@ -230,6 +230,16 @@ var luceneParser = function() {
         });
     };
 
+    /**
+     * Checks, if search query contains any lucene-specific syntax, or if it's a plain text
+     * @param {string} query
+     * @returns {boolean} true, if it's a complex lucene expression, false - if it's just a plaintext search
+     */
+    this.luceneSyntaxUsed = function(query) {
+        var AST = this.parse(query);
+        return (!AST.hasOwnProperty('right') && AST.left.field == '<implicit>');
+    };
+
 };
 
 angular.module('textSearch')

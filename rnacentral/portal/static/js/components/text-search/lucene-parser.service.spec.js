@@ -2,7 +2,7 @@ describe("Lucene parser:", function() {
     // inject and module functions come from angular-mocks
     beforeEach(module('textSearch'));
 
-    describe("preprocess():", function() {
+    describe("_preprocess():", function() {
         it("should capitalize 'AND' in 'foo and bar:baz'", inject(function(luceneParser) {
             expect(luceneParser._preprocess('foo and bar:baz')).toEqual('foo AND bar:baz');
         }));

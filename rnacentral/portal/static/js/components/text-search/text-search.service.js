@@ -5,6 +5,8 @@
 var search = function (_, $http, $interpolate, $location, $window, $q, routes, luceneParser) {
     var self = this; // in case some event handler or constructor overrides "this"
 
+    this.luceneParser = luceneParser;
+
     this.config = {
         fields: [
             'active',
@@ -321,16 +323,6 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
     this.loadMoreResults = function () {
         self.search(self.query, self.result.entries.length);
     };
-
-    /**
-     * Checks, if search query contains any lucene-specific syntax, or if it's a plain text
-     */
-    this.luceneSyntaxUsed = function (query) {
-        if (/[\+\-\&\|\!\{\}\[\]\^~\?\:\\\/\*\"\(]/.test(query)) return true;
-        if (/[\s\"]OR[\s\"]/.test(query)) return true;
-        if (/[\s\"]AND[\s\"]/.test(query)) return true;
-        return false;
-    }
 };
 
 angular.module('textSearch')
