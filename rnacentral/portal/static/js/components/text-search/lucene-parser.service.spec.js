@@ -88,7 +88,7 @@ describe("Lucene parser:", function() {
             };
             var newAST = AST.addField(field, 'AND');
 
-            var normalizedQuery = luceneParser.unparse(newAST);
+            var normalizedQuery = newAST.unparse();
             expect(normalizedQuery).toEqual('4V4Q AND length:[120 TO 1029]');
        }));
     });

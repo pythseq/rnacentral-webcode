@@ -22,6 +22,7 @@ module.exports = function(config) {
       'node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js',
       'node_modules/angular-loading-bar/build/loading-bar.js',
       'node_modules/angularjs-slider/dist/rzslider.js',
+      'node_modules/underscore/underscore.js',
       'js/components/underscore.module.js',
 
       'node_modules/angular-mocks/angular-mocks.js',

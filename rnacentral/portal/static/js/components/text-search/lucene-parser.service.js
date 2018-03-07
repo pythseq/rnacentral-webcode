@@ -103,7 +103,7 @@ var luceneParser = function() {
          * @param query
          * @private
          */
-        _preprocess = function (query) {
+        var _preprocess = function (query) {
             return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
                         .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
                         .reduce(function(query, word) { return query + " " + word }) // join words
