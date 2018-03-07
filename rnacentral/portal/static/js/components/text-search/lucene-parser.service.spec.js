@@ -20,7 +20,7 @@ describe("Lucene parser:", function() {
         it("should parse and unparse node expressions with 2 child expressions", inject(function (luceneParser) {
             var query = 'foo AND bar:baz';
             var AST = luceneParser.parse(query);
-            var normalizedQuery = luceneParser.unparse(AST);
+            var normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual('foo AND bar:"baz"');
         }));
@@ -28,7 +28,7 @@ describe("Lucene parser:", function() {
         it("should parse double quotes in fields: 'expert_db:\"mirbase\"'", inject(function (luceneParser) {
             var query = 'expert_db:"mirbase"';
             var AST = luceneParser.parse(query);
-            var normalizedQuery = luceneParser.unparse(AST);
+            var normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -36,7 +36,7 @@ describe("Lucene parser:", function() {
         it("should parse range expressions: '4V4Q AND length:[120 TO 1029]'", inject(function (luceneParser) {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = luceneParser.parse(query);
-            var normalizedQuery = luceneParser.unparse(AST);
+            var normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -45,7 +45,7 @@ describe("Lucene parser:", function() {
             var query = '4V4Q AND length:[120 to 1029]';
             query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');
             var AST = luceneParser.parse(query);
-            var normalizedQuery = luceneParser.unparse(AST);
+            var normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -55,7 +55,7 @@ describe("Lucene parser:", function() {
         it("should find length field in: '4V4Q AND length:[120 TO 1029]'", inject(function (luceneParser) {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = luceneParser.parse(query);
-            var fields = luceneParser.findField('length', AST);
+            var fields = AST.findField('length');
 
             expect(fields.length).toEqual(1);
         }));
@@ -66,9 +66,9 @@ describe("Lucene parser:", function() {
         it("should remove length from: '4V4Q AND length:[120 TO 1029]'", inject(function (luceneParser) {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = luceneParser.parse(query);
-            luceneParser.removeField('length', AST);
+            AST.removeField('length');
 
-            var normalizedQuery = luceneParser.unparse(AST);
+            var normalizedQuery = AST.unparse();
             expect(normalizedQuery).toEqual('4V4Q');
         }));
     });
@@ -86,7 +86,7 @@ describe("Lucene parser:", function() {
                 'inclusive_min': true,
                 'inclusive_max': true
             };
-            var newAST = luceneParser.addField(field, 'AND', AST);
+            var newAST = AST.addField(field, 'AND');
 
             var normalizedQuery = luceneParser.unparse(newAST);
             expect(normalizedQuery).toEqual('4V4Q AND length:[120 TO 1029]');
