@@ -175,66 +175,50 @@ var luceneParser = function() {
     };
 
     /**
-     * Returns first occurence of a named field with a certain term
+     * Returns all occurrences of a named field with a certain term
      * @param {string} field
-     * @param {string|object} term - string for FIELD expressions, object {} for RANGE expressions
      * @param {object} AST
-     * @returns {object} - found expression object
+     * @param {string|object|undefined} term - string for FIELD expressions, object {} for RANGE expressions,
+     *   if undefined, check for equality of terms is not performed
+     * @returns {Array} - array of found expression objects
      */
-    this.findField = function(field, term, AST) {
+    this.findField = function(field, AST, term) {
         var top; // top of the stack
         var stack = [AST];
+        var results = [];
         while (stack.length > 0) {
             top = stack.shift();
             if (this._type(top) === this.TYPES.FIELD) {
-                if (top.field === field && top.term === term) return top;
+                if (top.field === field) {
+                    if (top.term && top.term === term) results.push(top);
+                    else if (typeof(term) === 'undefined') results.push(top);
+                }
             } else if (this._type(top) === this.TYPES.RANGE) {
-                if (top.field === field &&
+                if (typeof(term) === 'undefined') results.push(top);
+                else if (top.field === field &&
                     top.term_min === term.term_min &&
                     top.term_max === term.term_max &&
                     top.inclusive_min === term.inclusive_min &&
-                    top.inclusive_max === term.inclusive_max) return top;
+                    top.inclusive_max === term.inclusive_max) results.push(top);
             } else if (this._type(top) === this.TYPES.NODE) {
                 stack.unshift(top.left);
                 if (top.hasOwnProperty('right')) stack.unshift(top.right);
             }
         }
-    };
 
-    /**
-     * Returns a list of all occurrences of named field (e.g. 'length: 130' or
-     * 'length: [100 TO 200]') in FIELD and RANGE expressions of AST.
-     * @param {string} field - name of the field, we're looking for
-     * @param {object} AST with parents
-     * @returns {Array} - Array of expressions (left-to-right)
-     */
-    this.findFieldAll = function(field, AST) {
-        var top; // top of the stack
-        var stack = [AST];
-        var result = [];
-        while (stack.length > 0) {
-            top = stack.shift();
-            if (this._type(top) !== this.TYPES.NODE) {
-                if (top.field === field) result.push(top);
-            }
-            else {
-                stack.unshift(top.left);
-                if (top.hasOwnProperty('right')) stack.unshift(top.right);
-            }
-        }
-
-        return result;
+        return results;
     };
 
     /**
      * Removes all the occurrences of named field from AST.
      * @param {string} field
      * @param {object} AST with parents
+     * @param {string|object|undefined} term - field is removed only if its value equals to term or
      * @returns {object} AST with specified fields removed
      */
-    this.removeField = function(field, AST) {
+    this.removeField = function(field, AST, term) {
         var otherChild, parentToGrandparent;
-        var hits = this.findFieldAll(field, AST); // we need to get rid of these expressions
+        var hits = this.findField(field, AST); // we need to get rid of these expressions
         hits.forEach(function(hit) {
             // if parent has both left and right children, get rid of hit.parent and replace it with parent's otherChild
             if (hit.parent.hasOwnProperty('right')) {

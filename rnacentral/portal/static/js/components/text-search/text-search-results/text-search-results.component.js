@@ -52,7 +52,7 @@ var textSearchResults = {
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
             var AST = luceneParser.parse(query);
-            var lengthField = luceneParser.findFieldAll('length', AST);
+            var lengthField = luceneParser.findField('length', AST);
             if (lengthField.length !== 0) {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
@@ -170,7 +170,7 @@ var textSearchResults = {
          */
         ctrl.isFacetApplied = function(facetId, facetValue) {
             var AST = luceneParser.parse(search.query);
-            var facets = luceneParser.findFieldAll(facetId, AST);
+            var facets = luceneParser.findField(facetId, AST);
             facets.some(function(facet) {
                 if (facet.hasOwnAttribute('term') ) {
                     return facet.term === facetValue;
