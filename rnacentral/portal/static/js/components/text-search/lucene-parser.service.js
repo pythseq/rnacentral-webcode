@@ -75,6 +75,7 @@ var luceneParser = function() {
      * @returns {Object} - AST
      */
     this.parse = function(query) {
+        query = this._preprocess(query);
         return new AST(query);
     };
 
@@ -88,6 +89,18 @@ var luceneParser = function() {
         return (!AST.hasOwnProperty('right') && AST.left.field == '<implicit>');
     };
 
+    /**
+     * Capitalize lucene AND/OR/NOT/TO words, replace slashes with underscores
+     * @param query
+     * @private
+     */
+    this._preprocess = function (query) {
+        return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
+                    .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
+                    .reduce(function(query, word) { return query + " " + word }) // join words
+                    .replace(/: /g, ':') // avoid spaces after faceted search terms
+                    .replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2'); // replace slashes with underscores
+    };
 
     // AST constructor and methods
     // ---------------------------
@@ -98,19 +111,6 @@ var luceneParser = function() {
      * @constructor
      */
     var AST = function(query) {
-        /**
-         * Capitalize lucene AND/OR/NOT/TO words, replace slashes with underscores
-         * @param query
-         * @private
-         */
-        var _preprocess = function (query) {
-            return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
-                        .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
-                        .reduce(function(query, word) { return query + " " + word }) // join words
-                        .replace(/: /g, ':') // avoid spaces after faceted search terms
-                        .replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2'); // replace slashes with underscores
-        };
-
         /**
          * Escape special symbols used by Lucene
          * Escaped: + - && || ! { } [ ] ^ ~ ? : \ /
@@ -148,7 +148,7 @@ var luceneParser = function() {
             return clone;
         };
 
-        query = _preprocess(query);
+        query = luceneParser._preprocess(query);
         var ast = lucenequeryparser.parse(query);
         ast = ASTWithParents(ast);
         _.extend(this, ast);
@@ -160,7 +160,7 @@ var luceneParser = function() {
      */
     AST.prototype.unparse = function() {
         var result = "";
-        var stack = [AST]; // this is stack maintained for DFS
+        var stack = [this]; // stack maintained for DFS
 
         var expression; // expression is the currently evaluated
         while (stack.length > 0) {
@@ -171,7 +171,7 @@ var luceneParser = function() {
                 result = result + expression;
             } else if (_type(expression) === TYPES.NODE) {
                 if (expression.hasOwnProperty('right')) {
-                    if (expression === AST) stack.unshift(expression.left, ' ', expression.operator, ' ', expression.right);
+                    if (expression === this) stack.unshift(expression.left, ' ', expression.operator, ' ', expression.right);
                     else stack.unshift('(', expression.left, ' ', expression.operator, ' ', expression.right, ')');
                 } else {
                     stack.unshift(expression.left);
@@ -212,7 +212,7 @@ var luceneParser = function() {
      */
     AST.prototype.findField = function(field, term) {
         var top; // top of the stack
-        var stack = [AST];
+        var stack = [this];
         var results = [];
         while (stack.length > 0) {
             top = stack.shift();
@@ -278,12 +278,15 @@ var luceneParser = function() {
      * @returns {object} newAST
      */
     AST.prototype.addField = function(field, operator) {
-        var newAST = { left: AST, operator: operator, right: field};
-        if (AST.hasOwnProperty('parent')) {
-            AST.parent = newAST;
-            newAST.parent = null;
-        }
-        return newAST;
+        var left = _.extend({}, this); // create a shallow copy of AST
+        this.keys().forEach(function(key) { delete this[key] }); // clean old properties from AST
+
+        this.left = left;
+        this.operator = operator;
+        this.right = field;
+
+        this.left.parent = this;
+        this.parent = null;
     };
 };
 
