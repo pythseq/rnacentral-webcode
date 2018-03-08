@@ -178,7 +178,7 @@ var textSearchResults = {
          * parameters.
          */
         ctrl.facetSearch = function(facetId, facetValue) {
-            var field, newQuery;
+            var field, sameFacet, newQuery;
 
             var AST = new LuceneAST(search.query);
 
@@ -194,7 +194,13 @@ var textSearchResults = {
                         similarity: undefined,
                         proximity: undefined
                     };
-                    AST.addField(field, 'AND');
+
+                    sameFacet = AST.findField(facetId);
+                    if (sameFacet) {
+                        sameFacet.forEach(function(sameFacetField) { AST.addField(field, 'OR', sameFacetField); });
+                    } else {
+                        AST.addField(field, 'AND');
+                    }
                 }
             } else {
                 var lengthRegex = /length:\[(\d+) to (\d+)\]/i;

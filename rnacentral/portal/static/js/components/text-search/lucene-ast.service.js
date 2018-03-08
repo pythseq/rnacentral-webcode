@@ -145,6 +145,7 @@ LuceneAST.prototype.findParents = function() {
     }
 };
 
+
 /**
  * Inverse to parsing - assemble a query string back from AST
  * @returns {string} - Lucene query string
@@ -267,22 +268,46 @@ LuceneAST.prototype.removeField = function(field, term) {
 
 
 /**
- * Adds a field to the top of the AST (when stringified, it is going
- * to be the last part of query string).
+ * If otherField is undefined, adds a field to the top of the AST (so that
+ * it becomes the last part of lucene query) with operator (usually, 'AND').
+ *
+ * If otherField is defined, adds the field as a sibling of otherField
+ * (usually with 'OR' operator).
+ *
  * @param {object} field - FIELD or RANGE expression
  * @param {string} operator - e.g. 'AND', 'OR'
+ * @param {object} [otherField] - FIELD or RANGE expression
  * @returns {object} newAST
  */
-LuceneAST.prototype.addField = function(field, operator) {
-    var left = _.extend({}, this); // create a shallow copy of AST
-    Object.keys(this).forEach(function(key) { delete this[key] }); // clean old properties from AST
+LuceneAST.prototype.addField = function(field, operator, otherField) {
+    if (typeof otherField === 'undefined') { // just append new field to the end of query
+        var left = _.extend({}, this); // create a shallow copy of AST
+        Object.keys(this).forEach(function(key) { delete this[key] }); // clean old properties from AST
 
-    this.left = left;
-    this.operator = operator;
-    this.right = field;
+        this.left = left;
+        this.operator = operator;
+        this.right = field;
 
-    this.left.parent = this;
-    this.parent = null;
+        this.left.parent = this;
+        this.parent = null;
+    } else { // make new field a sibling of otherField
+        var newNode = {
+            left: otherField,
+            operator: operator,
+            right: field,
+            field: undefined
+        };
+
+        var parent = otherField.parent;
+
+        // replace otherField with newNode in tree hierarchy, make field and otherField newNode children
+        newNode.parent = parent;
+        otherField.parent = newNode;
+        field.parent = newNode;
+
+        if (parent.left === otherField) parent.left = newNode;
+        else parent.right = newNode;
+    }
 };
 
 

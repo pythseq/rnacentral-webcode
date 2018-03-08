@@ -89,6 +89,25 @@ describe("Lucene AST:", function() {
 
             var normalizedQuery = AST.unparse();
             expect(normalizedQuery).toEqual('4V4Q AND length:[120 TO 1029]');
-       }));
+        }));
+
+        it("should create sibling 'expert_db:\"ENA\"' in 'hotair AND expert_db:\"HGNC\"'", inject(function (LuceneAST) {
+            var query = 'hotair AND expert_db:"HGNC"';
+            var AST = new LuceneAST(query);
+
+            var field = {
+                field: 'expert_db',
+                term: 'ENA',
+                prefix: undefined,
+                boost: undefined,
+                similarity: undefined,
+                proximity: undefined
+            };
+            var otherField = AST.findField('expert_db')[0];
+            AST.addField(field, 'OR', otherField);
+
+            var normalizedQuery = AST.unparse();
+            expect(normalizedQuery).toEqual('hotair AND (expert_db:"HGNC" OR expert_db:"ENA")');
+        }))
     });
 });
