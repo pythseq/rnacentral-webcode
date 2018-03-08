@@ -29,8 +29,8 @@ module.exports = function(config) {
 
       'js/components/text-search/text-search.module.js',
       'node_modules/lucene-query-parser/lib/lucene-query-parser.js',
-      'js/components/text-search/lucene-parser.service.js',
-      'js/components/text-search/lucene-parser.service.spec.js'
+      'js/components/text-search/lucene-ast.service.js',
+      'js/components/text-search/lucene-ast.service.spec.js'
     ],
 
 

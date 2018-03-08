@@ -1,4 +1,4 @@
-describe("Lucene parser:", function() {
+describe("Lucene AST:", function() {
     // inject and module functions come from angular-mocks
     beforeEach(module('textSearch'));
 
