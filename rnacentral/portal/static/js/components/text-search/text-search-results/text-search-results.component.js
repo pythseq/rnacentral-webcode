@@ -1,8 +1,8 @@
 var textSearchResults = {
     bindings: {},
     templateUrl: '/static/js/components/text-search/text-search-results/text-search-results.html',
-    controller: ['$interpolate', '$location', '$http', '$timeout', '$scope', '$filter', '$q', 'search', 'luceneParser', 'routes',
-    function($interpolate, $location, $http, $timeout, $scope, $filter, $q, search, luceneParser, routes) {
+    controller: ['$interpolate', '$location', '$http', '$timeout', '$scope', '$filter', '$q', 'search', 'LuceneAST', 'routes',
+    function($interpolate, $location, $http, $timeout, $scope, $filter, $q, search, LuceneAST, routes) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
@@ -51,14 +51,14 @@ var textSearchResults = {
 
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
-            var AST = luceneParser.parse(query);
-            var lengthField = luceneParser.findField('length', AST);
+            var AST = new LuceneAST(query);
+            var lengthField = AST.findField('length');
             if (lengthField.length !== 0) {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
             }
-            luceneParser.removeField('length', AST);
-            var filteredQuery = luceneParser.unparse(AST);
+            AST.removeField('length');
+            var filteredQuery = AST.unparse();
 
             /**
              * Small internal function that update slider with new floor/ceil (and min/max, if necessary).
@@ -105,7 +105,7 @@ var textSearchResults = {
 
                 return routes.ebiSearch({
                     ebiBaseUrl: global_settings.EBI_SEARCH_ENDPOINT,
-                    query: query ? luceneParser._preprocess(query): query,
+                    query: query ? LuceneAST._preprocess(query): query,
                     hlfields: "length",
                     facetcount: "",
                     facetfields: "length",
@@ -155,9 +155,9 @@ var textSearchResults = {
          * Resets slider to default value
          */
         ctrl.resetSlider = function() {
-            var AST = luceneParser.parse(search.query);
-            luceneParser.removeField('length', AST);
-            var filteredQuery = luceneParser.unparse(AST);
+            var AST = new LuceneAST(search.query);
+            AST.removeField('length');
+            var filteredQuery = LuceneAST.unparse();
 
             search.search(filteredQuery);
         };
@@ -169,10 +169,10 @@ var textSearchResults = {
          * Determine if the facet has already been applied.
          */
         ctrl.isFacetApplied = function(facetId, facetValue) {
-            var AST = luceneParser.parse(search.query);
-            var facets = luceneParser.findField(facetId, AST);
+            var AST = new LuceneAST(search.query);
+            var facets = AST.findField(facetId);
             facets.some(function(facet) {
-                if (facet.hasOwnAttribute('term') ) {
+                if (facet.hasOwnProperty('term') ) {
                     return facet.term === facetValue;
                 } else {
                     return facet.term_min === facetValue[0] && facet.term_max === facetValue[1];
@@ -187,9 +187,9 @@ var textSearchResults = {
          * parameters.
          */
         ctrl.facetSearch = function(facetId, facetValue) {
-            var field, newQuery, newAST;
+            var field, newQuery;
 
-            var AST = luceneParser(search.query);
+            var AST = new LuceneAST(search.query);
 
             if (facetId !== 'length') {
                 if (ctrl.isFacetApplied(facetId, facetValue)) { // remove facet
@@ -203,8 +203,8 @@ var textSearchResults = {
                         similarity: undefined,
                         proximity: undefined
                     };
-                    newAST = luceneParser.addField(field, AST);
-                    newQuery = luceneParser.unparse(newAST);
+                    AST.addField(field, AST);
+                    newQuery = AST.unparse();
                 }
             } else {
                 var lengthClause = 'length\\:\\[\\d+ to \\d+\\]';

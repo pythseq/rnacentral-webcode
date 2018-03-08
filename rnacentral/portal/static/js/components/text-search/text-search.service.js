@@ -2,10 +2,10 @@
  * Service for launching a text search.
  */
 
-var search = function (_, $http, $interpolate, $location, $window, $q, routes, luceneParser) {
+var search = function (_, $http, $interpolate, $location, $window, $q, routes, LuceneAST) {
     var self = this; // in case some event handler or constructor overrides "this"
 
-    this.luceneParser = luceneParser;
+    this.LuceneAST = LuceneAST;
 
     this.config = {
         fields: [
@@ -162,10 +162,8 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
         // change page title, which is also used in browser tabs
         $window.document.title = 'Search: ' + query;
 
-        console.log(luceneParser.parse(query));
-
-        var AST = luceneParser.parse(query);
-        query = luceneParser.unparse(AST);
+        var AST = new LuceneAST(query);
+        query = AST.unparse();
 
         self.result._query = query;
 
@@ -326,4 +324,4 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, l
 };
 
 angular.module('textSearch')
-    .service('search', ['_', '$http', '$interpolate', '$location', '$window', '$q', 'routes', 'luceneParser', search]);
+    .service('search', ['_', '$http', '$interpolate', '$location', '$window', '$q', 'routes', 'LuceneAST', search]);

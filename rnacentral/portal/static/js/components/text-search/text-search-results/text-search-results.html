@@ -90,7 +90,7 @@
 
     <div class="col-md-12">
       <div class="alert alert-warning col-md-12 text-search-no-results">
-        <strong>No results</strong><span ng-if="!$ctrl.search.luceneParser.luceneSyntaxUsed($ctrl.search.query)">. <a ng-href='/search?q={{ $ctrl.search.query }}%20OR%20author:%22{{ $ctrl.search.query }}%22%20OR%20pub_title:%22{{ $ctrl.search.query }}%22'>Search again in author names and paper titles</a> (omitted by default)</span>
+        <strong>No results</strong><span ng-if="!$ctrl.search.LuceneAST.luceneSyntaxUsed($ctrl.search.query)">. <a ng-href='/search?q={{ $ctrl.search.query }}%20OR%20author:%22{{ $ctrl.search.query }}%22%20OR%20pub_title:%22{{ $ctrl.search.query }}%22'>Search again in author names and paper titles</a> (omitted by default)</span>
       </div>
     </div>
 
