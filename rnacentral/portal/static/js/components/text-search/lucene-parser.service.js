@@ -54,8 +54,8 @@ limitations under the License.
 var LuceneAST = function(query) {
     query = LuceneAST._preprocess(query);
     var ast = lucenequeryparser.parse(query);
-    ast = LuceneAST.ASTWithParents(ast);
     _.extend(this, ast);
+    this.findParents();
 };
 
 
@@ -117,22 +117,25 @@ LuceneAST._escape = function (searchTerm) {
 };
 
 
+// Prototype methods
+// -----------------
+
 /**
  * Adds parent property to each AST element that points to its parent
  * node element.
- * @param {object} AST
- * @returns {object} copy of AST with denoted
  */
-LuceneAST.ASTWithParents = function(AST) {
-    var clone = JSON.parse(JSON.stringify(AST)); // clone the AST, ineffective though
-    clone.parent = null; // root of the tree has null parent
+LuceneAST.prototype.findParents = function() {
+    this.parent = null; // root's parent is null
 
-    var top, stack = [clone];
+    var top, stack = [this];
     while (stack.length > 0) {
-        top = stack.shift();
+        top = stack.shift(); // add 'parent' to children of top, if top has children
         if (LuceneAST._type(top) === LuceneAST.TYPES.NODE) {
-            stack.unshift(top.left);
-            top.left.parent = top;
+            if (top.hasOwnProperty('left')) {
+                stack.unshift(top.left);
+                top.left.parent = top;
+            }
+
 
             if (top.hasOwnProperty('right')) {
                 stack.unshift(top.right);
@@ -140,13 +143,7 @@ LuceneAST.ASTWithParents = function(AST) {
             }
         }
     }
-
-    return clone;
 };
-
-
-// Prototype methods
-// -----------------
 
 /**
  * Inverse to parsing - assemble a query string back from AST
@@ -239,10 +236,10 @@ LuceneAST.prototype.findField = function(field, term) {
  * @returns {object} AST with specified fields removed
  */
 LuceneAST.prototype.removeField = function(field, term) {
+    var self = this;
     var otherChild, parentToGrandparent;
     var hits = this.findField(field, term); // we need to get rid of these expressions
     hits.forEach(function(hit) {
-        debugger;
         // if parent has both left and right children, get rid of hit.parent and replace it with parent's otherChild
         if (hit.parent.hasOwnProperty('right')) {
             otherChild = hit.parent.left === hit ? hit.parent.right : hit.parent.left;
@@ -278,7 +275,7 @@ LuceneAST.prototype.removeField = function(field, term) {
  */
 LuceneAST.prototype.addField = function(field, operator) {
     var left = _.extend({}, this); // create a shallow copy of AST
-    this.keys().forEach(function(key) { delete this[key] }); // clean old properties from AST
+    Object.keys(this).forEach(function(key) { delete this[key] }); // clean old properties from AST
 
     this.left = left;
     this.operator = operator;

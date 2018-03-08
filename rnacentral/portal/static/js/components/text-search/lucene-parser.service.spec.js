@@ -67,7 +67,6 @@ describe("Lucene parser:", function() {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = new LuceneAST(query);
             AST.removeField('length');
-
             var normalizedQuery = AST.unparse();
             expect(normalizedQuery).toEqual('4V4Q');
         }));
