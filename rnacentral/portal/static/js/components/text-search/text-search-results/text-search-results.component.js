@@ -169,16 +169,7 @@ var textSearchResults = {
          * Determine if the facet has already been applied.
          */
         ctrl.isFacetApplied = function(facetId, facetValue) {
-            var AST = new LuceneAST(search.query);
-            var facets = AST.findField(facetId);
-            facets.some(function(facet) {
-                if (facet.hasOwnProperty('term') ) {
-                    return facet.term === facetValue;
-                } else {
-                    return facet.term_min === facetValue[0] && facet.term_max === facetValue[1];
-                }
-            });
-            return facets.length > 0;
+            return new LuceneAST(search.query).findField(facetId, facetValue).length > 0
         };
 
         /**
