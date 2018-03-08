@@ -194,23 +194,27 @@ var textSearchResults = {
                         similarity: undefined,
                         proximity: undefined
                     };
-                    AST.addField(field, AST);
-                    newQuery = AST.unparse();
+                    AST.addField(field, 'AND');
                 }
             } else {
-                var lengthClause = 'length\\:\\[\\d+ to \\d+\\]';
-
-                // remove length clause in different contexts
-                newQuery = newQuery.replace(new RegExp(' AND ' + lengthClause + ' AND '), ' AND ', 'i');
-                newQuery = newQuery.replace(new RegExp(lengthClause + ' AND '), '', 'i');
-                newQuery = newQuery.replace(new RegExp(' AND ' + lengthClause), '', 'i');
-                newQuery = newQuery.replace(new RegExp(lengthClause), '', 'i') || 'RNA';
-
-                // add length facet
-                facet = facetId + ':' + facetValue;
-                newQuery = newQuery + ' AND ' + facet; // add new facet
+                var lengthRegex = /length:\[(\d+) to (\d+)\]/i;
+                var groups = lengthRegex.exec(facetValue);
+                field = {
+                    field: 'length',
+                    term_min: groups[1],
+                    term_max: groups[2],
+                    inclusive: true,
+                    inclusive_min: true,
+                    inclusive_max: true
+                };
+                if (ctrl.isFacetApplied(facetId, field)) {
+                    AST.removeField(facetId, field);
+                } else {
+                    AST.addField(field, 'AND');
+                }
             }
 
+            newQuery = AST.unparse();
             search.search(newQuery);
         };
 
