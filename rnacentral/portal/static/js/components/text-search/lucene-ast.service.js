@@ -64,7 +64,7 @@ var LuceneAST = function(query) {
  * @type {{NODE: string, FIELD: string, RANGE: string}}
  * @const
  */
-LuceneAST.TYPES = {'NODE': 'NODE', 'FIELD': 'FIELD', 'RANGE': 'RANGE'};
+LuceneAST.TYPES = {'NODE': 'NODE', 'FIELD': 'FIELD', 'RANGE': 'RANGE', 'EMPTY': 'EMPTY'};
 
 
 /**
@@ -88,6 +88,7 @@ LuceneAST._type = function(expression) {
     if (expression.hasOwnProperty('left')) return LuceneAST.TYPES.NODE;
     else if (expression.hasOwnProperty('term')) return LuceneAST.TYPES.FIELD;
     else if (expression.hasOwnProperty('term_min')) return LuceneAST.TYPES.RANGE;
+    else if (Object.keys(expression).length === 1) return LuceneAST.TYPES.EMPTY;
     else throw "AST expression of unknown type: " + JSON.stringify(expression);
 };
 
@@ -98,11 +99,15 @@ LuceneAST._type = function(expression) {
  * @private
  */
 LuceneAST._preprocess = function (query) {
-    return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
-                .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
-                .reduce(function(query, word) { return query + " " + word }) // join words
-                .replace(/: /g, ':') // avoid spaces after faceted search terms
-                .replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2'); // replace slashes with underscores
+    if (query.match(/[^\s"]+|"[^"]*"/g)) {
+        return query.match(/[^\s"]+|"[^"]*"/g) // split into words: http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
+                    .map(function(word) { return word.match(/^(and|or|not|to)$/gi) ? word.toUpperCase() : word }) // capitalize AND, OR, NOT and TO
+                    .reduce(function(query, word) { return query + " " + word }) // join words
+                    .replace(/: /g, ':') // avoid spaces after faceted search terms
+                    .replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2'); // replace slashes with underscores
+    } else {
+        return query;
+    }
 };
 
 

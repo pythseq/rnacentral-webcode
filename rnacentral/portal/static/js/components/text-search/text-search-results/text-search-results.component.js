@@ -51,17 +51,16 @@ var textSearchResults = {
 
             // find min/max length in query, get floor/ceil by sending query without lengthClause
             var queryMin, queryMax;
-            var AST = new LuceneAST(query);
-            var lengthField = AST.findField('length');
+            var lengthField = search.AST.findField('length');
             if (lengthField.length !== 0) {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
             }
-            AST.removeField('length');
-            var filteredQuery = AST.unparse();
+            search.AST.removeField('length');
+            var filteredQuery = search.AST.unparse();
 
             /**
-             * Small internal function that update slider with new floor/ceil (and min/max, if necessary).
+             * Small internal function that updates slider with new floor/ceil (and min/max, if necessary).
              */
             function _setLengthSlider(floor, ceil, queryMin, queryMax) {
                 if (typeof(queryMin) !== 'undefined' && typeof(queryMax) !== 'undefined' ) {
@@ -155,10 +154,8 @@ var textSearchResults = {
          * Resets slider to default value
          */
         ctrl.resetSlider = function() {
-            var AST = new LuceneAST(search.query);
-            AST.removeField('length');
+            self.AST.removeField('length');
             var filteredQuery = LuceneAST.unparse();
-
             search.search(filteredQuery);
         };
 
@@ -169,7 +166,7 @@ var textSearchResults = {
          * Determine if the facet has already been applied.
          */
         ctrl.isFacetApplied = function(facetId, facetValue) {
-            return new LuceneAST(search.query).findField(facetId, facetValue).length > 0
+            return search.AST.findField(facetId, facetValue).length > 0
         };
 
         /**
@@ -180,11 +177,9 @@ var textSearchResults = {
         ctrl.facetSearch = function(facetId, facetValue) {
             var field, sameFacet, newQuery;
 
-            var AST = new LuceneAST(search.query);
-
             if (facetId !== 'length') {
                 if (ctrl.isFacetApplied(facetId, facetValue)) { // remove facet
-                    AST.removeField(facetId, facetValue);
+                    search.AST.removeField(facetId, facetValue);
                 } else { // add new facet
                     field = {
                         field: facetId,
@@ -195,11 +190,11 @@ var textSearchResults = {
                         proximity: undefined
                     };
 
-                    sameFacet = AST.findField(facetId);
+                    sameFacet = search.AST.findField(facetId);
                     if (sameFacet) {
-                        sameFacet.forEach(function(sameFacetField) { AST.addField(field, 'OR', sameFacetField); });
+                        sameFacet.forEach(function(sameFacetField) { search.AST.addField(field, 'OR', sameFacetField); });
                     } else {
-                        AST.addField(field, 'AND');
+                        search.AST.addField(field, 'AND');
                     }
                 }
             } else {
@@ -214,13 +209,13 @@ var textSearchResults = {
                     inclusive_max: true
                 };
                 if (ctrl.isFacetApplied(facetId, field)) {
-                    AST.removeField(facetId, field);
+                    search.AST.removeField(facetId, field);
                 } else {
-                    AST.addField(field, 'AND');
+                    search.AST.addField(field, 'AND');
                 }
             }
 
-            newQuery = AST.unparse();
+            newQuery = search.AST.unparse();
             search.search(newQuery);
         };
 

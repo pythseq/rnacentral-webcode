@@ -92,7 +92,8 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, L
     this.status = 'off'; // possible values: 'off', 'in progress', 'success', 'error'
 
     this.query = ''; // the query will be observed by watches
-    this.sort = 'boost:descending,length:descending' // EBI search endpoint sorts results by this field value
+    this.AST = new LuceneAST(this.query); // this.AST should always correspond to this.query after search
+    this.sort = 'boost:descending,length:descending'; // EBI search endpoint sorts results by this field value
     this.sortTiebreaker = 'length:descending'; // secondary search field, used in case first field is even
 
     this.callbacks = []; // callbacks to be called after each search.search(); done for slider redraw
@@ -153,6 +154,8 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, L
         // hopscotch.endTour(); // end guided tour when a search is launched
         self.autocompleteDeferred && self.autocompleteDeferred.reject(); // if autocompletion was launched - reject it
 
+        self.AST = new LuceneAST(query);
+        query = self.AST.unparse();
         self.query = query;
         self.status = 'in progress';
 
@@ -161,9 +164,6 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, L
 
         // change page title, which is also used in browser tabs
         $window.document.title = 'Search: ' + query;
-
-        var AST = new LuceneAST(query);
-        query = AST.unparse();
 
         self.result._query = query;
 
