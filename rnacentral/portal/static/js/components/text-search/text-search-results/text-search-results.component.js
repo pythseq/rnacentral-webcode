@@ -191,7 +191,7 @@ var textSearchResults = {
                     };
 
                     sameFacet = search.AST.findField(facetId);
-                    if (sameFacet) {
+                    if (sameFacet.length > 0) {
                         sameFacet.forEach(function(sameFacetField) { search.AST.addField(field, 'OR', sameFacetField); });
                     } else {
                         search.AST.addField(field, 'AND');
