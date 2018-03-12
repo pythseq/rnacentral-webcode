@@ -215,8 +215,8 @@ LuceneAST.prototype.findField = function(field, term) {
         top = stack.shift();
         if (LuceneAST._type(top) === LuceneAST.TYPES.FIELD) {
             if (top.field === field) {
-                if (top.term && top.term === term) results.push(top);
-                else if (typeof(term) === 'undefined') results.push(top);
+                if (typeof(term) === 'undefined') results.push(top);
+                else if (top.term && top.term.toUpperCase() === term.toUpperCase()) results.push(top);
             }
         } else if (LuceneAST._type(top) === LuceneAST.TYPES.RANGE) {
             if (typeof(term) === 'undefined') results.push(top);
