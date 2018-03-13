@@ -55,7 +55,7 @@ describe("Lucene AST:", function() {
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
 
-            expect(normalizedQuery).toEqual(query);
+            expect(normalizedQuery).toEqual('expert_db:"mirbase" OR (expert_db:"silva" OR expert_db:"ena")');
         }));
     });
 

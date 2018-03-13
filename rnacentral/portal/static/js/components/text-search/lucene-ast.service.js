@@ -281,7 +281,7 @@ LuceneAST.prototype.removeField = function(field, term) {
  *
  * @param {object} field - FIELD or RANGE expression
  * @param {string} operator - e.g. 'AND', 'OR'
- * @param {object} [otherField] - FIELD or RANGE expression
+ * @param {object} [otherField] - FIELD, RANGE or NODE expression
  * @returns {object} newAST
  */
 LuceneAST.prototype.addField = function(field, operator, otherField) {
@@ -303,7 +303,7 @@ LuceneAST.prototype.addField = function(field, operator, otherField) {
             field: undefined
         };
 
-        var parent = otherField.parent;
+        var parent = otherField.hasOwnProperty('parent') ? otherField.parent : undefined;
 
         // replace otherField with newNode in tree hierarchy, make field and otherField newNode children
         newNode.parent = parent;

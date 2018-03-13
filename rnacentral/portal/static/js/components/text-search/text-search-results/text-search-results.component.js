@@ -192,7 +192,43 @@ var textSearchResults = {
 
                     sameFacet = search.AST.findField(facetId);
                     if (sameFacet.length > 0) {
-                        sameFacet.forEach(function(sameFacetField) { search.AST.addField(field, 'OR', sameFacetField); });
+                        // Suppose that we have a query: 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
+                        // In such case we need to add another expert_db:"<something>" to that whole subtree only once.
+                        var sameFacetSubtrees = []; // contains only the rightmost node's parent of each subtree
+                        var nonVisited = sameFacet.slice();
+                        var current = nonVisited.shift();
+                        while (nonVisited.length > 0) {
+
+                            /**
+                             * I assume that sameSubtree is like:
+                             * ----------------------------------
+                             *
+                             *           /
+                             *          /\
+                             *         /\ \
+                             *        /\ \ \
+                             *
+                             *  and never like:
+                             *  ---------------
+                             *
+                             *           /
+                             *          /\
+                             *         / \
+                             *        /\ /\
+                             *
+                             **/
+
+                            if (current.parent.hasOwnProperty('right') && (nonVisited[0] === current.parent.right)) {
+                                current = nonVisited.shift();
+                            } else {
+                                sameFacetSubtrees.push(current.parent);
+                                current = nonVisited.shift();
+                            }
+                        }
+                        sameFacetSubtrees.forEach(function(subtreeRightmostLeaf) {
+                            search.AST.addField(field, 'OR', subtreeRightmostLeaf);
+                        });
+
                     } else {
                         search.AST.addField(field, 'AND');
                     }
