@@ -49,6 +49,14 @@ describe("Lucene AST:", function() {
 
             expect(normalizedQuery).toEqual(query);
         }));
+
+        it("should handle non-binary tree: 'expert_db:\"mirbase\" OR expert_db:\"silva\" OR expert_db:\"ena\"'", inject(function (LuceneAST) {
+            var query = 'expert_db:\"mirbase\" OR expert_db:\"silva\" OR expert_db:\"ena\"';
+            var AST = new LuceneAST(query);
+            var normalizedQuery = AST.unparse();
+
+            expect(normalizedQuery).toEqual(query);
+        }));
     });
 
     describe("findField():", function() {
