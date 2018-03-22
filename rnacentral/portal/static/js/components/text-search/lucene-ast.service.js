@@ -201,7 +201,7 @@ LuceneAST.prototype.unparse = function() {
 
 
 /**
- * Returns all occurrences of a named field with a certain term
+ * Returns all occurrences of a named field with a certain term in left-to-right order.
  * @param {string} field
  * @param {string|object} [term] - string for FIELD expressions, object {} for RANGE expressions,
  *   if undefined, check for equality of terms is not performed
@@ -226,8 +226,8 @@ LuceneAST.prototype.findField = function(field, term) {
                 top.inclusive_min === term.inclusive_min &&
                 top.inclusive_max === term.inclusive_max) results.push(top);
         } else if (LuceneAST._type(top) === LuceneAST.TYPES.NODE) {
-            stack.unshift(top.left);
             if (top.hasOwnProperty('right')) stack.unshift(top.right);
+            stack.unshift(top.left);
         }
     }
 

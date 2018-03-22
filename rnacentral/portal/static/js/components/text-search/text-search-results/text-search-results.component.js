@@ -163,80 +163,21 @@ var textSearchResults = {
         // -------------------
 
         /**
-         * Determine if the facet has already been applied.
-         */
-        ctrl.isFacetApplied = function(facetId, facetValue) {
-            return search.AST.findField(facetId, facetValue).length > 0
-        };
-
-        /**
          * Run a search with a facet enabled.
          * The facet will be toggled on and off in the repeated calls with the same
          * parameters.
          */
         ctrl.facetSearch = function(facetId, facetValue) {
-            var field, sameFacet, newQuery;
-
             if (facetId !== 'length') {
-                if (ctrl.isFacetApplied(facetId, facetValue)) { // remove facet
+                if (search.AST.findField(facetId, facetValue).length > 0) { // remove facet
                     search.AST.removeField(facetId, facetValue);
                 } else { // add new facet
-                    field = {
-                        field: facetId,
-                        term: facetValue,
-                        prefix: undefined,
-                        boost: undefined,
-                        similarity: undefined,
-                        proximity: undefined
-                    };
-
-                    sameFacet = search.AST.findField(facetId);
-                    if (sameFacet.length > 0) {
-                        // Suppose that we have a query: 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
-                        // In such case we need to add another expert_db:"<something>" to that whole subtree only once.
-                        var sameFacetSubtrees = []; // contains only the rightmost node's parent of each subtree
-                        var nonVisited = sameFacet.slice();
-                        var current = nonVisited.shift();
-                        while (nonVisited.length > 0) {
-
-                            /**
-                             * I assume that sameSubtree is like:
-                             * ----------------------------------
-                             *
-                             *           /
-                             *          /\
-                             *         /\ \
-                             *        /\ \ \
-                             *
-                             *  and never like:
-                             *  ---------------
-                             *
-                             *           /
-                             *          /\
-                             *         / \
-                             *        /\ /\
-                             *
-                             **/
-
-                            if (current.parent.hasOwnProperty('right') && (nonVisited[0] === current.parent.right)) {
-                                current = nonVisited.shift();
-                            } else {
-                                sameFacetSubtrees.push(current.parent);
-                                current = nonVisited.shift();
-                            }
-                        }
-                        sameFacetSubtrees.forEach(function(subtreeRightmostLeaf) {
-                            search.AST.addField(field, 'OR', subtreeRightmostLeaf);
-                        });
-
-                    } else {
-                        search.AST.addField(field, 'AND');
-                    }
+                    addFacet(facetId, facetValue);
                 }
             } else {
                 var lengthRegex = /length:\[(\d+) to (\d+)\]/i;
                 var groups = lengthRegex.exec(facetValue);
-                field = {
+                var field = {
                     field: 'length',
                     term_min: groups[1],
                     term_max: groups[2],
@@ -244,15 +185,75 @@ var textSearchResults = {
                     inclusive_min: true,
                     inclusive_max: true
                 };
-                if (ctrl.isFacetApplied(facetId, field)) {
+                if (ctrl.search.AST.findField(facetId, field).length > 0) {
                     search.AST.removeField(facetId, field);
                 } else {
                     search.AST.addField(field, 'AND');
                 }
             }
 
-            newQuery = search.AST.unparse();
-            search.search(newQuery);
+            search.search(search.AST.unparse());
+        };
+
+        var addFacet = function(facetId, facetValue) {
+            var field, sameFacet;
+
+            field = {
+                field: facetId,
+                term: facetValue,
+                prefix: undefined,
+                boost: undefined,
+                similarity: undefined,
+                proximity: undefined
+            };
+
+            sameFacet = search.AST.findField(facetId);
+            if (sameFacet.length > 0) {
+                // Suppose that we have a query: 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
+                // In such case we need to add another expert_db:"<something>" to that whole subtree only once.
+
+                var sameFacetSubtrees = []; // contains only the rightmost node's parent of each subtree
+                var nonVisited = sameFacet.slice();
+
+                while (nonVisited.length > 0) {
+                    /**
+                     * I assume that sameSubtree is like:
+                     * ----------------------------------
+                     *
+                     *           /
+                     *          /\
+                     *         /\ \
+                     *        /\ \ \
+                     *
+                     *  and never like:
+                     *  ---------------
+                     *
+                     *           /
+                     *          /\
+                     *         /  \
+                     *        /\  /\
+                     *
+                     **/
+
+                    var current = nonVisited.shift(); // iterates over nonVisited (which are tree leaves)
+
+                    var rightNeighbor;
+                    if (current === current.parent.left) rightNeighbor = current.parent.right;
+                    else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
+
+                    if (nonVisited.length === 0 || nonVisited[0] !== rightNeighbor) {
+                        if (current.parent.left === current) sameFacetSubtrees.push(current); // it's a single element, push it
+                        else sameFacetSubtrees.push(current.parent); // if it's a whole substree, push its root
+                    }
+                }
+
+                sameFacetSubtrees.forEach(function(subtreeRightmostLeaf) {
+                    search.AST.addField(field, 'OR', subtreeRightmostLeaf);
+                });
+
+            } else {
+                search.AST.addField(field, 'AND');
+            }
         };
 
         /**

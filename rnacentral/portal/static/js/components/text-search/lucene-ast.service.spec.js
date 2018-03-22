@@ -2,6 +2,7 @@ describe("Lucene AST:", function() {
     // inject and module functions come from angular-mocks
     beforeEach(module('textSearch'));
 
+
     describe("_preprocess():", function() {
         it("should capitalize 'AND' in 'foo and bar:baz'", inject(function(LuceneAST) {
             expect(LuceneAST._preprocess('foo and bar:baz')).toEqual('foo AND bar:baz');
@@ -15,6 +16,7 @@ describe("Lucene AST:", function() {
             expect(LuceneAST._preprocess('4V4Q AND length:[120 to 1029]')).toEqual('4V4Q AND length:[120 TO 1029]');
         }));
     });
+
 
     describe("unparse():", function() {
         it("should parse and unparse node expressions with 2 child expressions", inject(function (LuceneAST) {
@@ -59,6 +61,7 @@ describe("Lucene AST:", function() {
         }));
     });
 
+
     describe("findField():", function() {
         it("should find length field in: '4V4Q AND length:[120 TO 1029]'", inject(function (LuceneAST) {
             var query = '4V4Q AND length:[120 TO 1029]';
@@ -66,6 +69,17 @@ describe("Lucene AST:", function() {
             var fields = AST.findField('length');
 
             expect(fields.length).toEqual(1);
+        }));
+
+        it("should return occurrences in '(expert_db:\"mirbase\" OR expert_db:\"RefSeq\") OR expert_db:\"ENA\"' in the left-to-right order", inject(function (LuceneAST) {
+            var query = '(expert_db:\"mirbase\" OR expert_db:\"RefSeq\") OR expert_db:\"ENA\"';
+            var AST = new LuceneAST(query);
+            var fields = AST.findField('expert_db');
+
+            expect(fields.length).toEqual(3);
+            expect(fields[0].term).toEqual('mirbase');
+            expect(fields[1].term).toEqual('RefSeq');
+            expect(fields[2].term).toEqual('ENA');
         }));
     });
 
@@ -79,6 +93,7 @@ describe("Lucene AST:", function() {
             expect(normalizedQuery).toEqual('4V4Q');
         }));
     });
+
 
     describe("addField():", function() {
         it("should add 'length:[120 TO 1029]' with 'AND' operator to '4V4Q'", inject(function (LuceneAST) {
@@ -116,6 +131,23 @@ describe("Lucene AST:", function() {
 
             var normalizedQuery = AST.unparse();
             expect(normalizedQuery).toEqual('hotair AND (expert_db:"HGNC" OR expert_db:"ENA")');
-        }))
+        }));
+
+        // it("should create 4th hierarchy level for '((expert_db:\"mirbase\" OR expert_db:\"RefSeq\") OR expert_db:\"ENA\")'", inject(function (LuceneAST) {
+        //     var query = '(expert_db:\"mirbase\" OR expert_db:\"RefSeq\") OR expert_db:\"ENA\"';
+        //     var AST = new LuceneAST(query);
+        //
+        //     var field = {
+        //         field: 'expert_db',
+        //         term: 'HGNC',
+        //         prefix: undefined,
+        //         boost: undefined,
+        //         similarity: undefined,
+        //         proximity: undefined
+        //     };
+        //     var otherField = AST.findField()
+        //
+        // }));
+
     });
 });
