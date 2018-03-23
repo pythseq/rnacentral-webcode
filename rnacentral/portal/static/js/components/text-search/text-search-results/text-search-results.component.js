@@ -138,16 +138,9 @@ var textSearchResults = {
                         if (value < 10000) return $filter('number')(value);
                         else return Number(Math.floor(value/1000)).toString() + 'k';
                     },
-                    onEnd: ctrl.lengthSearch
+                    onEnd: function () { ctrl.facetSearch('length') }
                 }
             };
-        };
-
-        /**
-         * Edge case of facet search with length field applied.
-         */
-        ctrl.lengthSearch = function () {
-            ctrl.facetSearch('length', '[' + ctrl.lengthSlider.min + ' to ' + ctrl.lengthSlider.max + ']', true)
         };
 
         /**
@@ -175,18 +168,17 @@ var textSearchResults = {
                     addFacet(facetId, facetValue);
                 }
             } else {
-                var lengthRegex = /length:\[(\d+) to (\d+)\]/i;
-                var groups = lengthRegex.exec(facetValue);
                 var field = {
                     field: 'length',
-                    term_min: groups[1],
-                    term_max: groups[2],
+                    term_min: ctrl.lengthSlider.min,
+                    term_max: ctrl.lengthSlider.max,
                     inclusive: true,
                     inclusive_min: true,
                     inclusive_max: true
                 };
-                if (ctrl.search.AST.findField(facetId, field).length > 0) {
-                    search.AST.removeField(facetId, field);
+                if (search.AST.findField(facetId).length > 0) {
+                    search.AST.removeField(facetId);
+                    search.AST.addField(field, 'AND');
                 } else {
                     search.AST.addField(field, 'AND');
                 }
