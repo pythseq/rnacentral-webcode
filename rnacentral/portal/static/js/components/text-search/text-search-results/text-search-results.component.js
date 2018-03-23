@@ -43,8 +43,7 @@ var textSearchResults = {
 
         /**
          * Sets new value of length slider upon init or search.
-         * @param newQuery
-         * @param oldQuery
+         * @param query
          */
         ctrl.setLengthSlider = function(query) {
             var min, max, floor, ceil;
