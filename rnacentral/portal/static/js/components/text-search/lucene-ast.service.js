@@ -285,7 +285,8 @@ LuceneAST.prototype.removeField = function(field, term) {
  * @returns {object} newAST
  */
 LuceneAST.prototype.addField = function(field, operator, otherField) {
-    if (typeof otherField === 'undefined') { // just append new field to the end of query
+    // If otherField not set, just append new field to the end of the query
+    if (typeof otherField === 'undefined') {
         var left = _.extend({}, this); // create a shallow copy of AST
         Object.keys(this).forEach(function(key) { delete this[key] }); // clean old properties from AST
 
@@ -295,23 +296,41 @@ LuceneAST.prototype.addField = function(field, operator, otherField) {
 
         this.left.parent = this;
         this.parent = null;
-    } else { // make new field a sibling of otherField
-        var newNode = {
-            left: otherField,
-            operator: operator,
-            right: field,
-            field: undefined
-        };
+    } else { // otherField is set - make new field its sibling
+        var newNode, parent = otherField.parent !== null ? otherField.parent : null;
 
-        var parent = otherField.hasOwnProperty('parent') ? otherField.parent : undefined;
+        if (parent === null) {  // this node was the root of the tree, handle special case
+            // make newNode behave as if it were the old root and it was made a child of new root
+            newNode = {
+                left: otherField.left,
+                operator: otherField.operator,
+                right: otherField.right,
+                field: undefined
+            };
 
-        // replace otherField with newNode in tree hierarchy, make field and otherField newNode children
-        newNode.parent = parent;
-        otherField.parent = newNode;
-        field.parent = newNode;
+            Object.keys(this).forEach(function(key) { delete this[key]; });
 
-        if (parent.left === otherField) parent.left = newNode;
-        else parent.right = newNode;
+            this.left = newNode;
+            this.right = field;
+            this.operator = operator;
+            this.field = null;
+            this.parent = null;
+        } else { // newNode is not the root
+            newNode = {
+                left: otherField,
+                operator: operator,
+                right: field,
+                field: undefined
+            };
+
+            // replace otherField with newNode in tree hierarchy, make field and otherField newNode children
+            newNode.parent = parent;
+            otherField.parent = newNode;
+            field.parent = newNode;
+
+            if (parent && parent.left === otherField) parent.left = newNode;
+            else if (parent) parent.right = newNode;
+        }
     }
 };
 

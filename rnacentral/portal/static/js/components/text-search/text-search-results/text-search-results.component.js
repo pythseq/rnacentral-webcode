@@ -243,7 +243,7 @@ var textSearchResults = {
 
                     if (nonVisited.length === 0 || nonVisited[0] !== rightNeighbor) {
                         if (current.parent.left === current) sameFacetSubtrees.push(current); // it's a single element, push it
-                        else sameFacetSubtrees.push(current.parent); // if it's a whole substree, push its root
+                        else sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
                     }
                 }
 
