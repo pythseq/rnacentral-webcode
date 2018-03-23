@@ -212,9 +212,9 @@ var textSearchResults = {
                 // Suppose that we have a query: 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
                 // In such case we need to add another expert_db:"<something>" to that whole subtree only once.
 
-                var sameFacetSubtrees = []; // contains only the rightmost node's parent of each subtree
+                var sameFacetSubtrees = []; // contains only the root of subtree (if it's 1-element subtree, it is root)
                 var nonVisited = sameFacet.slice();
-
+                var newSubtree = true; // flags that we started to walk a new subtree
                 while (nonVisited.length > 0) {
                     /**
                      * I assume that sameSubtree is like:
@@ -237,13 +237,18 @@ var textSearchResults = {
 
                     var current = nonVisited.shift(); // iterates over nonVisited (which are tree leaves)
 
-                    var rightNeighbor;
-                    if (current === current.parent.left) rightNeighbor = current.parent.right;
-                    else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
+                    if (newSubtree) { // new subtree must start with this element, otherwise it's a 1-element subtree
+                        if (current.parent.left !== current) sameFacetSubtrees.push(current);
+                        else newSubtree = false;
+                    } else { // it's a continuation of subtree, check when it ends
+                        var rightNeighbor;
+                        if (current === current.parent.left) rightNeighbor = current.parent.right;
+                        else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
 
-                    if (nonVisited.length === 0 || nonVisited[0] !== rightNeighbor) {
-                        if (current.parent.left === current) sameFacetSubtrees.push(current); // it's a single element, push it
-                        else sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
+                        if (nonVisited.length === 0 || nonVisited[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
+                            sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
+                            newSubtree = true;
+                        }
                     }
                 }
 
