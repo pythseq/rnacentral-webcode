@@ -186,10 +186,18 @@ var textSearchResults = {
             search.search(search.AST.unparse());
         };
 
+        /**
+         * Either fields in the same facet constitute a subtree with ORs
+         * e.g. 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
+         * In that case add one more element to that subtree, if it's not duplicate.
+         *
+         * Or we have a mix - in that case remove all of them and add this
+         * field to the top of tree with AND.
+         **/
         var addFacet = function(facetId, facetValue) {
-            var field, sameFacet;
+            var sameFacet = search.AST.findField(facetId);
 
-            field = {
+            var field = {
                 field: facetId,
                 term: facetValue,
                 prefix: undefined,
@@ -198,37 +206,52 @@ var textSearchResults = {
                 proximity: undefined
             };
 
-            sameFacet = search.AST.findField(facetId);
-            if (sameFacet.length > 0) {
-                // Suppose that we have a query: 'expert_db:"ENA" OR expert_db:"RFAM" OR expert_db:"HGNC"'.
-                // In such case we need to add another expert_db:"<something>" to that whole subtree only once.
+            if (sameFacet.length === 1) {
+                if (sameFacet[0].term === facetValue) search.AST.addField(field, 'OR', sameFacet[0]);
+                else search.AST.removeField(facetId, facetValue);
+            } else if (sameFacet.length > 1) {
+                /**
+                 * I assume that sameSubtree is like (1) and never like (2):
+                 *
+                 * 1)        /             2)       /
+                 *          /\                     /\
+                 *         /\ \                   /  \
+                 *        /\ \ \                 /\  /\
+                 *
+                 * It should also use OR operators everywhere.
+                 **/
+                var isFirst = true;
+                while (sameFacet.length > 0) {
+                    var current = sameFacet.shift();
+                    if (isFirst) {
+                        if (current.parent.left !== current) {
+                            search.AST.removeField(facetId);
+                            search.AST.addField(field, 'AND');
+                            break;
+                        }
+                        else isFirst = false;
+                    } else {
+                        var rightNeighbor;
+                        if (current === current.parent.left) rightNeighbor = current.parent.right;
+                        else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
 
-                var sameFacetSubtrees = []; // contains only the root of subtree (if it's 1-element subtree, it is root)
+                        if (sameFacet.length === 0 || sameFacet[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
+                            sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
+                            newSubtree = true;
+                        }
+                    }
+                }
+
+
+
                 var nonVisited = sameFacet.slice();
                 var newSubtree = true; // flags that we started to walk a new subtree
                 while (nonVisited.length > 0) {
-                    /**
-                     * I assume that sameSubtree is like:
-                     * ----------------------------------
-                     *
-                     *           /
-                     *          /\
-                     *         /\ \
-                     *        /\ \ \
-                     *
-                     *  and never like:
-                     *  ---------------
-                     *
-                     *           /
-                     *          /\
-                     *         /  \
-                     *        /\  /\
-                     *
-                     **/
+
 
                     var current = nonVisited.shift(); // iterates over nonVisited (which are tree leaves)
 
-                    if (newSubtree) { // new subtree must start with this element, otherwise it's a 1-element subtree
+                    if (newSubtree) { // either it's a new subtree, starting with this element or it's a 1-element subtree
                         if (current.parent.left !== current) sameFacetSubtrees.push(current);
                         else newSubtree = false;
                     } else { // it's a continuation of subtree, check when it ends
