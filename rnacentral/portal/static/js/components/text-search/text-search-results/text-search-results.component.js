@@ -211,6 +211,8 @@ var textSearchResults = {
                 else search.AST.removeField(facetId, facetValue);
             } else if (sameFacet.length > 1) {
                 /**
+                 * Check that we're having a correct tree:
+                 *
                  * I assume that sameSubtree is like (1) and never like (2):
                  *
                  * 1)        /             2)       /
@@ -231,45 +233,16 @@ var textSearchResults = {
                         }
                         else isFirst = false;
                     } else {
-                        var rightNeighbor;
-                        if (current === current.parent.left) rightNeighbor = current.parent.right;
-                        else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
-
-                        if (sameFacet.length === 0 || sameFacet[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
-                            sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
-                            newSubtree = true;
+                        var rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
+                        if (sameFacet[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
+                            search.AST.removeField(facetId);
+                            search.AST.addField(field, 'AND');
+                            break;
+                        } else {
+                            if (sameFacet.length === 0) search.AST.addField(field, 'OR', current);
                         }
                     }
                 }
-
-
-
-                var nonVisited = sameFacet.slice();
-                var newSubtree = true; // flags that we started to walk a new subtree
-                while (nonVisited.length > 0) {
-
-
-                    var current = nonVisited.shift(); // iterates over nonVisited (which are tree leaves)
-
-                    if (newSubtree) { // either it's a new subtree, starting with this element or it's a 1-element subtree
-                        if (current.parent.left !== current) sameFacetSubtrees.push(current);
-                        else newSubtree = false;
-                    } else { // it's a continuation of subtree, check when it ends
-                        var rightNeighbor;
-                        if (current === current.parent.left) rightNeighbor = current.parent.right;
-                        else rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
-
-                        if (nonVisited.length === 0 || nonVisited[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
-                            sameFacetSubtrees.push(current.parent); // if it's a whole subtree, push its root
-                            newSubtree = true;
-                        }
-                    }
-                }
-
-                sameFacetSubtrees.forEach(function(subtreeRightmostLeaf) {
-                    search.AST.addField(field, 'OR', subtreeRightmostLeaf);
-                });
-
             } else {
                 search.AST.addField(field, 'AND');
             }
