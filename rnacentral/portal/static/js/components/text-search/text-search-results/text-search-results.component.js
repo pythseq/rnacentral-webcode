@@ -207,7 +207,7 @@ var textSearchResults = {
             };
 
             if (sameFacet.length === 1) {
-                if (sameFacet[0].term === facetValue) search.AST.addField(field, 'OR', sameFacet[0]);
+                if (sameFacet[0].term !== facetValue) search.AST.addField(field, 'OR', sameFacet[0]);
                 else search.AST.removeField(facetId, facetValue);
             } else if (sameFacet.length > 1) {
                 /**
@@ -222,25 +222,33 @@ var textSearchResults = {
                  *
                  * It should also use OR operators everywhere.
                  **/
-                var isFirst = true;
+                var previous, current;
                 while (sameFacet.length > 0) {
-                    var current = sameFacet.shift();
-                    if (isFirst) {
+                    current = sameFacet.shift();
+                    if (previous === undefined) {
                         if (current.parent.left !== current) {
                             search.AST.removeField(facetId);
                             search.AST.addField(field, 'AND');
                             break;
                         }
-                        else isFirst = false;
+                        else previous = current;
                     } else {
-                        var rightNeighbor = current.parent.parent !== null ? current.parent.parent.right : null;
-                        if (sameFacet[0] !== rightNeighbor || rightNeighbor.parent.operator !== 'OR') {
+                        if (previous.parent.left === previous &&
+                            previous.parent.right === current &&
+                            previous.parent.operator === 'OR') {
+                            previous = current;
+                        } else if (previous.parent.left !== previous &&
+                                   previous.parent.parent !== null &&
+                                   previous.parent.parent.right == current &&
+                                   previous.parent.parent.operator === 'OR') {
+                            previous = current;
+                        } else {
                             search.AST.removeField(facetId);
                             search.AST.addField(field, 'AND');
                             break;
-                        } else {
-                            if (sameFacet.length === 0) search.AST.addField(field, 'OR', current);
                         }
+
+                        if (sameFacet.length === 0) search.AST.addField(field, 'OR', current.parent);
                     }
                 }
             } else {
