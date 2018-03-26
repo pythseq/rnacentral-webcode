@@ -59,6 +59,14 @@ describe("Lucene AST:", function() {
 
             expect(normalizedQuery).toEqual('expert_db:"mirbase" OR (expert_db:"silva" OR expert_db:"ena")');
         }));
+
+        it("should not create additional parentheses around '4V4Q AND (expert_db:\"PDBe\" OR expert_db:\"ENA\")) AND TAXONOMY:\"562\"'", inject(function(LuceneAST) {
+            var query = '4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"';
+            var AST = new LuceneAST(query);
+            var normalizedQuery = AST.unparse();
+
+            expect(normalizedQuery).toEqual('4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"');
+        }));
     });
 
 
