@@ -242,7 +242,6 @@ LuceneAST.prototype.findField = function(field, term) {
  * @returns {object} AST with specified fields removed
  */
 LuceneAST.prototype.removeField = function(field, term) {
-    var self = this;
     var otherChild, parentToGrandparent;
     var hits = this.findField(field, term); // we need to get rid of these expressions
     hits.forEach(function(hit) {

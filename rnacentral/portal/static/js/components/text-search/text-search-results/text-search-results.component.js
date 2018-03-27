@@ -55,8 +55,9 @@ var textSearchResults = {
                 queryMin = parseInt(lengthField[0].term_min);
                 queryMax = parseInt(lengthField[0].term_max);
             }
-            search.AST.removeField('length');
-            var filteredQuery = search.AST.unparse();
+            var ASTWithoutLength = angular.copy(search.AST);
+            ASTWithoutLength.removeField('length');
+            var filteredQuery = ASTWithoutLength.unparse();
 
             /**
              * Small internal function that updates slider with new floor/ceil (and min/max, if necessary).

@@ -93,6 +93,7 @@ var search = function (_, $http, $interpolate, $location, $window, $q, routes, L
 
     this.query = ''; // the query will be observed by watches
     this.AST = new LuceneAST(this.query); // this.AST should always correspond to this.query after search
+
     this.sort = 'boost:descending,length:descending'; // EBI search endpoint sorts results by this field value
     this.sortTiebreaker = 'length:descending'; // secondary search field, used in case first field is even
 
