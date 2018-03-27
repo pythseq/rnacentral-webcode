@@ -147,8 +147,8 @@ var textSearchResults = {
          * Resets slider to default value
          */
         ctrl.resetSlider = function() {
-            self.AST.removeField('length');
-            var filteredQuery = LuceneAST.unparse();
+            search.AST.removeField('length');
+            var filteredQuery = search.AST.unparse();
             search.search(filteredQuery);
         };
 
