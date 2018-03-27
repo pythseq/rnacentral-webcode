@@ -111,6 +111,15 @@ describe("LuceneAST:", function() {
             expect(fields[1].term).toEqual('RefSeq');
             expect(fields[2].term).toEqual('ENA');
         }));
+
+        it("should not '(4V4Q AND expert_db:\"PDBe\") AND length:[120 TO 1207]'", inject(function (LuceneAST) {
+            var query = '(4V4Q AND expert_db:"PDBe") AND length:[120 TO 1207]';
+            var AST = new LuceneAST(query);
+            var fields = AST.findField('expert_db');
+
+            expect(fields.length).toEqual(1);
+            expect(fields[0].term).toEqual('PDBe');
+        }));
     });
 
 
