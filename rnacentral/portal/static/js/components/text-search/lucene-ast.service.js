@@ -219,12 +219,13 @@ LuceneAST.prototype.findField = function(field, term) {
                 else if (top.term && top.term.toUpperCase() === term.toUpperCase()) results.push(top);
             }
         } else if (LuceneAST._type(top) === LuceneAST.TYPES.RANGE) {
-            if (typeof(term) === 'undefined') results.push(top);
-            else if (top.field === field &&
-                top.term_min === term.term_min &&
-                top.term_max === term.term_max &&
-                top.inclusive_min === term.inclusive_min &&
-                top.inclusive_max === term.inclusive_max) results.push(top);
+            if (top.field === field) {
+                if (typeof(term) === 'undefined') results.push(top);
+                else if (top.term_min === term.term_min &&
+                    top.term_max === term.term_max &&
+                    top.inclusive_min === term.inclusive_min &&
+                    top.inclusive_max === term.inclusive_max) results.push(top);
+            }
         } else if (LuceneAST._type(top) === LuceneAST.TYPES.NODE) {
             if (top.hasOwnProperty('right')) stack.unshift(top.right);
             stack.unshift(top.left);
