@@ -1,4 +1,4 @@
-describe("Lucene AST:", function() {
+describe("LuceneAST:", function() {
     // inject and module functions come from angular-mocks
     beforeEach(module('textSearch'));
 
@@ -23,6 +23,8 @@ describe("Lucene AST:", function() {
             var query = 'foo AND bar:baz';
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual('foo AND bar:"baz"');
         }));
@@ -31,6 +33,8 @@ describe("Lucene AST:", function() {
             var query = 'expert_db:"mirbase"';
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -39,6 +43,8 @@ describe("Lucene AST:", function() {
             var query = '4V4Q AND length:[120 TO 1029]';
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -48,6 +54,8 @@ describe("Lucene AST:", function() {
             query = query.toUpperCase().replace(/(URS[0-9A-F]{10})\/(\d+)/ig, '$1_$2');
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual(query);
         }));
@@ -56,16 +64,30 @@ describe("Lucene AST:", function() {
             var query = 'expert_db:\"mirbase\" OR expert_db:\"silva\" OR expert_db:\"ena\"';
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
             expect(normalizedQuery).toEqual('expert_db:"mirbase" OR (expert_db:"silva" OR expert_db:"ena")');
         }));
 
-        it("should not create additional parentheses around '4V4Q AND (expert_db:\"PDBe\" OR expert_db:\"ENA\")) AND TAXONOMY:\"562\"'", inject(function(LuceneAST) {
-            var query = '4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"';
+        it("should not create additional parentheses around '(4V4Q AND (expert_db:\"PDBe\" OR expert_db:\"ENA\")) AND TAXONOMY:\"562\"'", inject(function(LuceneAST) {
+            var query = '(4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"';
             var AST = new LuceneAST(query);
             var normalizedQuery = AST.unparse();
+            AST = new LuceneAST(normalizedQuery);
+            normalizedQuery = AST.unparse();
 
-            expect(normalizedQuery).toEqual('4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"');
+            expect(normalizedQuery).toEqual('(4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562"');
+        }));
+
+        it("should recognize length clause in '((4V4Q AND (expert_db:\"PDBe\" OR expert_db:\"ENA\")) AND TAXONOMY:\"562\") AND length:[120 TO 2904]'", inject(function(LuceneAST) {
+           var query = '((4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562") AND length:[120 TO 2904]';
+           var AST = new LuceneAST(query);
+           var normalizedQuery = AST.unparse();
+           AST = new LuceneAST(normalizedQuery);
+           normalizedQuery = AST.unparse();
+
+           expect(normalizedQuery).toEqual('((4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562") AND length:[120 TO 2904]');
         }));
     });
 
