@@ -89,6 +89,15 @@ describe("LuceneAST:", function() {
 
            expect(normalizedQuery).toEqual('((4V4Q AND (expert_db:"PDBe" OR expert_db:"ENA")) AND TAXONOMY:"562") AND length:[120 TO 2904]');
         }));
+
+        it("should prohibit unary 'NOT' in 'NOT taxonomy:\"10090\"'", inject(function(LuceneAST) {
+            var query = 'NOT taxonomy:"10090"';
+            var AST = new LuceneAST(query);
+            var normalizedQuery = AST.unparse();
+
+            expect(normalizedQuery).toEqual('taxonomy:"10090"');
+
+        }));
     });
 
 
