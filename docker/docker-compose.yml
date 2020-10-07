@@ -37,8 +37,8 @@ services:
     ports:
       - 8000:80
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./rnacentral/portal/static/:/static
+      - ../nginx/conf.d:/etc/nginx/conf.d
+      - ../rnacentral/portal/static/:/static
     depends_on:
       - rnacentral
     networks:
