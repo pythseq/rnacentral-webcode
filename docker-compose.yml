@@ -5,6 +5,8 @@ services:
   rnacentral:
     build:
       context: .
+      args:
+        - RNACENTRAL_BRANCH=${RNACENTRAL_BRANCH}
       dockerfile: Dockerfile-development
     environment:
       - DB_HOST=${DB_HOST}

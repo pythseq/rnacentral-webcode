@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
 ENV RNACENTRAL_HOME=/srv/rnacentral
 ENV RNACENTRAL_LOCAL=$RNACENTRAL_HOME/local
 ENV SUPERVISOR_CONF_DIR=${SUPERVISOR_CONF_DIR:-"/srv/rnacentral/supervisor"}
+ARG RNACENTRAL_BRANCH
 
 # Create folders. Install Infernal and node.js
 RUN \
@@ -44,7 +45,8 @@ USER rnacentral
 # Download RNAcentral, install requirements and node.js dependencies
 RUN \
     cd $RNACENTRAL_HOME && \
-    git clone https://github.com/RNAcentral/rnacentral-webcode.git && \
+    BRANCH="${RNACENTRAL_BRANCH:-master}" && \
+    git clone -b "$BRANCH" https://github.com/RNAcentral/rnacentral-webcode.git && \
     pip install -r $RNACENTRAL_HOME/rnacentral-webcode/rnacentral/requirements.txt && \
     pip install gunicorn && \
     cd $RNACENTRAL_HOME/rnacentral-webcode/rnacentral/portal/static && npm install --only=production
