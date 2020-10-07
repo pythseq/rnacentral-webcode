@@ -20,6 +20,7 @@ services:
     networks:
       - redis_network
       - nginx_network
+      - memcached_network
 
   # Redis server
   redis:
@@ -44,8 +45,21 @@ services:
     networks:
       - nginx_network
 
+  # Memcached server
+  memcached:
+    image: memcached:1.6.7-alpine
+    ports:
+      - "8052:8052"
+    command: memcached -m 512m -p 8052
+    depends_on:
+      - rnacentral
+    networks:
+      - memcached_network
+
 networks:
   redis_network:
     driver: bridge
   nginx_network:
+    driver: bridge
+  memcached_network:
     driver: bridge
