@@ -3,9 +3,7 @@ version: '3'
 services:
   # RNAcentral website
   rnacentral:
-    image: rnacentral/rnacentral-webcode
-    expose:
-      - 8000
+    image: rnacentral/rnacentral-webcode:k8
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
@@ -13,6 +11,10 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
       - SECRET_KEY=${SECRET_KEY}
+    expose:
+      - 8000
+    volumes:
+      - static_volume:/srv/rnacentral/static
     depends_on:
       - redis
     networks:
@@ -37,7 +39,7 @@ services:
       - 8000:80
     volumes:
       - ../nginx/conf.d:/etc/nginx/conf.d
-      - ../rnacentral/portal/static/:/static
+      - static_volume:/srv/rnacentral/static
     depends_on:
       - rnacentral
     networks:
@@ -53,6 +55,9 @@ services:
       - rnacentral
     networks:
       - memcached-network
+
+volumes:
+  static_volume:
 
 networks:
   redis-network:
