@@ -7,7 +7,6 @@ services:
       context: .
       args:
         - RNACENTRAL_BRANCH=${RNACENTRAL_BRANCH}
-      dockerfile: Dockerfile-development
     environment:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
@@ -15,6 +14,10 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
       - SECRET_KEY=${SECRET_KEY}
+    expose:
+      - 8000
+    volumes:
+      - static_volume:/srv/rnacentral/static
     depends_on:
       - redis
     networks:
@@ -26,7 +29,7 @@ services:
   redis:
     image: redis:6.0.8-alpine
     ports:
-      - "8051:8051"
+      - 8051:8051
     command: redis-server --port 8051
     restart: always
     networks:
@@ -39,7 +42,7 @@ services:
       - 8000:80
     volumes:
       - ../nginx/conf.d:/etc/nginx/conf.d
-      - ../rnacentral/portal/static/:/static
+      - static_volume:/srv/rnacentral/static
     depends_on:
       - rnacentral
     networks:
@@ -49,12 +52,15 @@ services:
   memcached:
     image: memcached:1.6.7-alpine
     ports:
-      - "8052:8052"
+      - 8052:8052
     command: memcached -m 512m -p 8052
     depends_on:
       - rnacentral
     networks:
       - memcached-network
+
+volumes:
+  static_volume:
 
 networks:
   redis-network:

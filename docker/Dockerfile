@@ -49,12 +49,11 @@ RUN \
     git clone -b "$BRANCH" https://github.com/RNAcentral/rnacentral-webcode.git && \
     pip install -r $RNACENTRAL_HOME/rnacentral-webcode/rnacentral/requirements.txt && \
     pip install gunicorn && \
-    cd $RNACENTRAL_HOME/rnacentral-webcode/rnacentral/portal/static && npm install --only=production
+    cd $RNACENTRAL_HOME/rnacentral-webcode/rnacentral/portal/static && npm install --only=production && \
+    mkdir $RNACENTRAL_HOME/static
 
+WORKDIR $RNACENTRAL_HOME/rnacentral-webcode
 COPY ./entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
-
-# Expose a container port where the website is served
-EXPOSE 8000
 
 CMD [ "/bin/sh", "-c", "/usr/bin/supervisord -c ${SUPERVISOR_CONF_DIR}/supervisord.conf" ]
