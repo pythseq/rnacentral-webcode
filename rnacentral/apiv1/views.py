@@ -16,6 +16,7 @@ import requests
 import zlib
 from itertools import chain
 
+from django.db import connection
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
@@ -31,17 +32,17 @@ from rest_framework_jsonp.renderers import JSONPRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from apiv1.serializers import RnaNestedSerializer, AccessionSerializer, CitationSerializer, XrefSerializer, \
-                              RnaFlatSerializer, RnaFastaSerializer, RnaGffSerializer, RnaGff3Serializer, RnaBedSerializer, \
-                              RnaSpeciesSpecificSerializer, ExpertDatabaseStatsSerializer, \
+                              RnaFlatSerializer, RnaFastaSerializer, RnaGffSerializer, RnaGff3Serializer, \
+                              RnaBedSerializer, RnaSpeciesSpecificSerializer, ExpertDatabaseStatsSerializer, \
                               RawPublicationSerializer, RnaSecondaryStructureSerializer, \
                               RfamHitSerializer, SequenceFeatureSerializer, \
                               EnsemblAssemblySerializer, ProteinTargetsSerializer, \
                               LncrnaTargetsSerializer, EnsemblComparaSerializer, SecondaryStructureSVGImageSerializer
 
 from apiv1.renderers import RnaFastaRenderer
-from portal.models import Rna, RnaPrecomputed, Accession, Xref, Database, DatabaseStats, RfamHit, EnsemblAssembly,\
-    GoAnnotation, RelatedSequence, ProteinInfo, SequenceFeature,\
-    SequenceRegion, EnsemblCompara, SecondaryStructureWithLayout
+from portal.models import Rna, RnaPrecomputed, Accession, Database, DatabaseStats, RfamHit, EnsemblAssembly, \
+    GoAnnotation, RelatedSequence, ProteinInfo, SequenceFeature, SequenceRegion, EnsemblCompara, \
+    SecondaryStructureWithLayout, dictfetchall
 from portal.config.expert_databases import expert_dbs
 from rnacentral.utils.pagination import Pagination, PaginatedRawQuerySet
 
@@ -449,26 +450,38 @@ class RnaGenomeLocations(generics.ListAPIView):
 
         output = []
         for region in regions:
-            output.append({
-                'chromosome': region.chromosome,
-                'strand': region.strand,
-                'start': region.region_start,
-                'end': region.region_stop,
-                'identity': region.identity,
-                'species': assembly.ensembl_url,
-                'ucsc_db_id': assembly.assembly_ucsc,
-                'ensembl_division': {
-                    'name': assembly.division,
-                    'url': 'http://' + assembly.subdomain
-                },
-                'ensembl_species_url': assembly.ensembl_url
-            })
+            # check the gene status for each region
+            query = '''
+                    SELECT status
+                    FROM rnc_gene_status
+                    WHERE region_id = '{region_id}'
+                    '''.format(region_id=region.id)
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                data = dictfetchall(cursor)
 
-            exceptions = ['X', 'Y']
-            if re.match(r'\d+', output[-1]['chromosome']) or output[-1]['chromosome'] in exceptions:
-                output[-1]['ucsc_chromosome'] = 'chr' + output[-1]['chromosome']
-            else:
-                output[-1]['ucsc_chromosome'] = output[-1]['chromosome']
+            # show results only from those with "clustered" status
+            if data[0]['status'] == "clustered":
+                output.append({
+                    'chromosome': region.chromosome,
+                    'strand': region.strand,
+                    'start': region.region_start,
+                    'end': region.region_stop,
+                    'identity': region.identity,
+                    'species': assembly.ensembl_url,
+                    'ucsc_db_id': assembly.assembly_ucsc,
+                    'ensembl_division': {
+                        'name': assembly.division,
+                        'url': 'http://' + assembly.subdomain
+                    },
+                    'ensembl_species_url': assembly.ensembl_url
+                })
+
+                exceptions = ['X', 'Y']
+                if re.match(r'\d+', output[-1]['chromosome']) or output[-1]['chromosome'] in exceptions:
+                    output[-1]['ucsc_chromosome'] = 'chr' + output[-1]['chromosome']
+                else:
+                    output[-1]['ucsc_chromosome'] = output[-1]['chromosome']
 
         return Response(output)
 
